@@ -423,6 +423,29 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 .grow .dt i{transform-origin:0 50%;animation:barRight .9s var(--ease) both}
 @keyframes barRight{from{transform:scaleX(0)}}
 .grow .col .ct{animation:ctIn .5s .35s var(--ease) both}
+/* ---------- nút cài app ---------- */
+#hillInstall{display:flex;align-items:center;gap:12px;padding:12px 14px}
+#hillInstall[hidden]{display:none}
+#hillInstall img{width:38px;height:38px;flex:none}
+#hillInstall .tx{flex:1;min-width:0}
+#hillInstall .tx b{display:block;font-size:15px}
+#hillInstall .tx small{display:block;color:var(--ink-2);font-size:12.5px;line-height:1.35}
+#hillInstall .primary{width:auto;margin:0;padding:10px 18px;flex:none}
+#hillInstallX{background:none;border:0;color:var(--ink-3);font-size:22px;line-height:1;padding:4px 6px;cursor:pointer;flex:none}
+#hillHow{z-index:20}
+/* ---------- màn hình bắt buộc cài app (điện thoại, trước khi nhập mã) ---------- */
+#hillGate{position:fixed;inset:0;z-index:40;display:flex;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background:linear-gradient(165deg,#34107f 0%,#5a35d8 40%,#3f86e6 76%,#4fb6ec 100%)}
+#hillGate .gw{margin:auto;width:100%;max-width:420px;text-align:center;
+  padding:calc(28px + env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom))}
+#hillGate img{width:84px;height:auto;margin-bottom:12px}
+#hillGate h2{margin:0 0 8px;font-size:24px;font-weight:800;letter-spacing:-.02em}
+#hillGate p{margin:0 0 6px;color:var(--ink-2);font-size:15px;line-height:1.5}
+#hillGate ol{text-align:left;margin:16px 0 4px;padding-left:22px;line-height:1.75;font-size:15px}
+#hillGate .primary{margin-top:14px}
+#hillGate .foot{margin-top:22px;color:var(--ink-3);font-size:13px;line-height:1.5}
+#hillGate [hidden]{display:none}
+#hillHow ol{margin:12px 0 4px;padding-left:22px;line-height:1.75;font-size:15px}
 @keyframes ctIn{from{opacity:0}}
 </style>
 </head>

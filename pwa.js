@@ -9,6 +9,7 @@
   var K = { token: 'hill.token', cache: 'hill.cache', queue: 'hill.queue' };
   var TIMEOUT = 30000;
   var offline = !navigator.onLine;
+  var gated = false;      // true: đang bị chặn bởi màn hình bắt buộc cài app, chưa được gọi API / hỏi mã
 
   function $(id) { return document.getElementById(id); }
   function get(k) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
@@ -95,6 +96,7 @@
   }
 
   function call(action, payload, tries) {
+    if (gated) return new Promise(function () {});     // chưa cài app thì không gọi gì, không hỏi mã
     tries = tries || 0;
     var used = null, t = get(K.token);
     return (t ? Promise.resolve(t) : askToken()).then(function (tk) {
@@ -230,6 +232,128 @@
     };
   });
   window.google = { script: { run: new Runner() } };
+
+  /* ---------- nút "Cài app về máy" ----------
+     Android / máy tính (Chrome, Edge): bấm là hiện hộp cài đặt của trình duyệt.
+     iPhone và trình duyệt trong Zalo/Facebook: không cài tự động được nên hiện hướng dẫn từng bước. */
+  (function () {
+    var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+    var host = $('v-home'), anchor = host && host.querySelector('.cols');
+    if (standalone || !host || !anchor) return;                 // đã cài rồi thì không hiện nút
+
+    var ua = navigator.userAgent;
+    var ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var inApp = /Zalo|FBAN|FBAV|FB_IAB|Messenger|Instagram|Line\/|MicroMessenger|TikTok|Snapchat/i.test(ua);
+    var KEY = 'hill.installHide', DAY = 86400000, deferred = null;
+
+    /* Điện thoại / máy tính bảng mở bằng trình duyệt: phải cài app trước rồi mới được nhập mã.
+       Lối riêng cho chủ app: thêm #web vào cuối link một lần, máy đó sẽ nhớ và dùng thẳng trình duyệt. */
+    var mobile = ios || /Android/i.test(ua);
+    try { if (/[#&]web\b/.test(location.hash)) set('hill.web', 1); } catch (e) {}
+    if (mobile && !get('hill.web')) { gated = true; buildGate(); return; }
+
+    var bar = document.createElement('section');
+    bar.className = 'card glass'; bar.id = 'hillInstall';
+    bar.hidden = Date.now() < Number(get(KEY) || 0);
+    bar.innerHTML =
+      '<img src="icons/logo-mark.png" alt="" width="38" height="38">' +
+      '<div class="tx"><b>Cài app về máy</b><small>Mở như app thường, dùng được cả khi mất mạng</small></div>' +
+      '<button class="primary" id="hillInstallGo">Cài</button>' +
+      '<button id="hillInstallX" aria-label="Để sau">×</button>';
+    anchor.parentNode.insertBefore(bar, anchor);
+
+    function how() {
+      if (inApp) return { t: 'Mở bằng trình duyệt trước', copy: true, s: [
+        'Bạn đang mở link trong ứng dụng khác (Zalo, Facebook...), chỗ này <b>không cài được</b>.',
+        'Bấm nút <b>⋯</b> hoặc biểu tượng trình duyệt ở góc màn hình, chọn <b>Mở bằng trình duyệt</b> (Safari hoặc Chrome).',
+        'Hoặc bấm <b>Sao chép link</b> bên dưới, rồi dán vào Safari/Chrome.',
+        'Mở lại trang rồi bấm nút <b>Cài</b>.'] };
+      if (ios) return { t: 'Cài app trên iPhone / iPad', s: [
+        'Mở link này bằng <b>Safari</b> (không phải Zalo hay Facebook).',
+        'Bấm nút <b>Chia sẻ</b> (hình vuông có mũi tên hướng lên) ở thanh dưới.',
+        'Kéo xuống, chọn <b>Thêm vào MH chính</b>.',
+        'Bấm <b>Thêm</b>. Biểu tượng HILL sẽ nằm ngoài màn hình chính.'] };
+      return { t: 'Cài app về máy', s: [
+        'Bấm menu <b>⋮</b> của trình duyệt (góc trên bên phải).',
+        'Chọn <b>Cài đặt ứng dụng</b> hoặc <b>Thêm vào màn hình chính</b>.',
+        'Bấm <b>Cài đặt</b>.'] };
+    }
+
+    function buildGate() {
+      var c = how();
+      var g = document.createElement('div');
+      g.id = 'hillGate';
+      g.innerHTML = '<div class="gw" id="hillGateBody">' +
+        '<img src="icons/logo-mark.png" alt="" width="84" height="84">' +
+        '<h2>Cài app HILL Overtime</h2>' +
+        '<p>Cài app về màn hình chính trước, rồi mở app từ đó để nhập mã truy cập.</p>' +
+        '<button class="primary" id="hillGateGo" hidden>Cài app ngay</button>' +
+        '<div id="hillGateHow"><ol>' + c.s.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ol>' +
+        (c.copy ? '<button class="primary" id="hillGateCopy">Sao chép link</button>' : '') + '</div>' +
+        '<div class="foot">Đã cài rồi? Hãy mở app <b>HILL</b> ở màn hình chính, đừng mở lại link này.</div></div>';
+      document.body.appendChild(g);
+      if (c.copy) $('hillGateCopy').onclick = function () { copyLink(this); };
+
+      function done() {
+        $('hillGateBody').innerHTML = '<img src="icons/logo-mark.png" alt="" width="84" height="84">' +
+          '<h2>Cài xong rồi!</h2><p>Giờ hãy mở app <b>HILL</b> ở màn hình chính để nhập mã và bắt đầu.</p>';
+      }
+      var ev = null;
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault(); ev = e;
+        $('hillGateGo').hidden = false; $('hillGateHow').hidden = true;
+      });
+      window.addEventListener('appinstalled', done);
+      $('hillGateGo').onclick = function () {
+        if (!ev) return;
+        var e = ev; ev = null;
+        e.prompt();
+        e.userChoice.then(function (r) {
+          if (r && r.outcome === 'accepted') done();
+          else { $('hillGateGo').hidden = true; $('hillGateHow').hidden = false; }   // từ chối thì hiện hướng dẫn tay
+        });
+      };
+    }
+
+    function copyLink(btn) {
+      var url = location.href.split('#')[0];
+      function done() { btn.textContent = 'Đã sao chép ✓'; }
+      function fallback() {
+        var t = document.createElement('textarea');
+        t.value = url; t.style.cssText = 'position:fixed;opacity:0';
+        document.body.appendChild(t); t.select();
+        try { document.execCommand('copy'); done(); } catch (e) { window.prompt('Sao chép link này:', url); }
+        document.body.removeChild(t);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, fallback);
+      else fallback();
+    }
+
+    function showHow() {
+      var c = how(), box = $('hillHow');
+      if (box) box.parentNode.removeChild(box);
+      document.body.insertAdjacentHTML('beforeend',
+        '<div class="sheet" id="hillHow"><div class="panel glass"><div class="grab"></div><h3>' + c.t + '</h3><ol>' +
+        c.s.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ol>' +
+        (c.copy ? '<button class="primary" id="hillCopy">Sao chép link</button>' : '') +
+        '<button class="ghost" id="hillHowOk">Đã hiểu</button></div></div>');
+      box = $('hillHow');
+      function close() { if (box.parentNode) box.parentNode.removeChild(box); }
+      box.addEventListener('click', function (e) { if (e.target === box) close(); });
+      $('hillHowOk').onclick = close;
+      if (c.copy) $('hillCopy').onclick = function () { copyLink(this); };
+    }
+
+    $('hillInstallGo').onclick = function () {
+      if (!deferred) { showHow(); return; }
+      var ev = deferred; deferred = null;
+      ev.prompt();
+      ev.userChoice.then(function (r) { if (r && r.outcome === 'accepted') bar.hidden = true; });
+    };
+    $('hillInstallX').onclick = function () { set(KEY, Date.now() + 3 * DAY); bar.hidden = true; };
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; });
+    window.addEventListener('appinstalled', function () { bar.hidden = true; del(KEY); });
+  })();
 
   /* ---------- khởi động ---------- */
   buildUi();
