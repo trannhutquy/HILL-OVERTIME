@@ -390,6 +390,20 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
   padding:6px 14px;border-radius:999px;font-size:12.5px;font-weight:600;white-space:nowrap;pointer-events:none}
 .netbar[hidden]{display:none}
 #hillLock{z-index:30}
+
+/* ---------- màn hình khởi động (hiện trong lúc tải số liệu) ---------- */
+#splash{position:fixed;inset:0;z-index:25;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  background:linear-gradient(165deg,#34107f 0%,#5a35d8 40%,#3f86e6 76%,#4fb6ec 100%);
+  transition:opacity .45s ease,visibility .45s;animation:splashAuto .5s 20s forwards}
+#splash.out{opacity:0;visibility:hidden;pointer-events:none}
+#splash img{width:92px;height:auto;margin-bottom:14px;animation:hillSpin 2.6s cubic-bezier(.45,.05,.3,1) infinite}
+#splash b{font-size:24px;font-weight:800;letter-spacing:-.02em;text-shadow:0 2px 18px rgba(165,243,252,.45);
+  animation:hillIn .7s var(--ease) both}
+#splash small{color:var(--ink-2);font-size:13.5px;animation:hillIn .7s .15s var(--ease) both}
+@keyframes hillSpin{to{transform:rotate(360deg)}}
+@keyframes hillIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes splashAuto{to{opacity:0;visibility:hidden}}
 @media (min-width:1024px){
   .brand{display:flex;align-items:center;gap:12px}
   .brand img{width:44px;height:44px;flex:none}
@@ -398,6 +412,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 </style>
 </head>
 <body>
+<div id="splash" role="status" aria-live="polite"><img src="icons/logo-mark.png" alt="" width="92" height="92"><b>HILL Overtime</b><small>Đang tải số liệu…</small></div>
 <div class="bg" aria-hidden="true"><i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i></div>
 
 <div class="shell">

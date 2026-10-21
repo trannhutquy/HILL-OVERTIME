@@ -18,6 +18,20 @@
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function netErr(m) { var e = new Error(m || 'Không có kết nối mạng'); e.net = true; return e; }
 
+  /* ---------- màn hình khởi động: tắt khi số liệu đã tải xong (tối thiểu 0,8 giây cho khỏi chớp) ---------- */
+  var splashAt = Date.now(), splashGone = false;
+  function hideSplash(now) {
+    if (splashGone) return;
+    splashGone = true;
+    var el = $('splash');
+    if (!el) return;
+    var wait = now ? 0 : Math.max(0, 800 - (Date.now() - splashAt));
+    setTimeout(function () {
+      el.classList.add('out');
+      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 500);
+    }, wait);
+  }
+
   /* ---------- giao diện phụ: thanh trạng thái + hộp nhập mã ---------- */
   function buildUi() {
     document.body.insertAdjacentHTML('beforeend',
@@ -64,6 +78,7 @@
     if (asking) return asking;
     asking = new Promise(function (resolve) {
       var box = $('hillLock'), inp = $('hillLockIn');
+      hideSplash(true);                       // để hộp nhập mã không bị che
       $('hillLockMsg').textContent = msg || 'Nhập một lần, thiết bị này sẽ nhớ.';
       box.hidden = false;
       setTimeout(function () { inp.focus(); }, 80);
@@ -210,8 +225,8 @@
     Runner.prototype[name] = function () {
       var self = this;
       API[name].apply(null, arguments).then(
-        function (v) { if (self._ok) self._ok(v); },
-        function (e) { if (self._fail) self._fail(e); else console.error(e); });
+        function (v) { if (self._ok) self._ok(v); if (name === 'getData') hideSplash(); },
+        function (e) { if (self._fail) self._fail(e); else console.error(e); if (name === 'getData') hideSplash(); });
     };
   });
   window.google = { script: { run: new Runner() } };
@@ -219,6 +234,7 @@
   /* ---------- khởi động ---------- */
   buildUi();
   paint();
+  setTimeout(function () { hideSplash(true); }, 12000);   // phòng khi mạng treo: không để màn khởi động che mãi
   window.addEventListener('online', function () { flush(); });
   window.addEventListener('offline', function () { setOffline(true); });
   document.addEventListener('visibilitychange', function () {
