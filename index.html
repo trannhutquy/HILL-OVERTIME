@@ -409,6 +409,21 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
   .brand img{width:44px;height:44px;flex:none}
   .brand b{font-size:21px}
 }
+
+/* ---------- animation nâng cấp ---------- */
+/* đổi tháng: danh sách trượt theo hướng vuốt */
+#list[data-dir="next"].enter .row{animation-name:slideNext}
+#list[data-dir="prev"].enter .row{animation-name:slidePrev}
+@keyframes slideNext{from{opacity:0;transform:translateX(34px)}to{opacity:1;transform:none}}
+@keyframes slidePrev{from{opacity:0;transform:translateX(-34px)}to{opacity:1;transform:none}}
+/* biểu đồ: cột mọc từ đáy, thanh ngang chạy từ trái */
+.grow .col .bar{transform-box:fill-box;transform-origin:50% 100%;animation:barUp .75s var(--ease) both;
+  animation-delay:calc(var(--bi,0) * 26ms)}
+@keyframes barUp{from{transform:scaleY(0);opacity:0}}
+.grow .dt i{transform-origin:0 50%;animation:barRight .9s var(--ease) both}
+@keyframes barRight{from{transform:scaleX(0)}}
+.grow .col .ct{animation:ctIn .5s .35s var(--ease) both}
+@keyframes ctIn{from{opacity:0}}
 </style>
 </head>
 <body>
@@ -890,6 +905,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 
   function renderChart(animate) {
     var y0 = Number(rows[0].d.slice(0, 4)), y1 = Number(rows[rows.length - 1].d.slice(0, 4));
+    $('v-chart').classList.toggle('grow', !!animate);
     $('chYear').textContent = 'Năm ' + ch.y;
     if (animate) swap($('chYear'));
     $('cPrev').disabled = ch.y <= y0;
@@ -907,6 +923,10 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     $('dayCap').textContent = dayCaption();
     $('distTitle').innerHTML = 'Giờ ra về hay gặp<small>Năm ' + ch.y + '</small>';
     $('dist').innerHTML = distHtml();
+    if (animate) {                                   // so le nhẹ từng cột cho đẹp
+      Array.prototype.forEach.call(document.querySelectorAll('#monthChart .bar'), function (b, i) { b.style.setProperty('--bi', i); });
+      Array.prototype.forEach.call(document.querySelectorAll('#dailyChart .bar'), function (b, i) { b.style.setProperty('--bi', i * 0.6); });
+    }
   }
 
 
@@ -1112,6 +1132,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     });
     if (t === 'chart') { ch = { y: Number(DATA.today.slice(0, 4)), m: Number(DATA.today.slice(5, 7)) }; chDay = null; clampChart(); }
     swap($('v-' + t));
+    $('list').dataset.dir = '';
     render(true);
     window.scrollTo(0, 0);
     if (t === 'hist' && !histSeen) {
@@ -1154,6 +1175,25 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     }, 230);
   }
 
+  /* ---------- phản hồi khi lưu: dòng ngày vừa sửa sáng viền xanh, nút vừa chọn nảy nhẹ ---------- */
+  function flashSaved(iso) {
+    if (REDUCED) return;
+    Array.prototype.forEach.call(document.querySelectorAll('.row[data-iso="' + iso + '"]'), function (el) {
+      if (!el.animate) return;
+      el.animate([
+        { transform: 'scale(.97)' },
+        { transform: 'scale(1.025)', offset: .35,
+          boxShadow: '0 0 0 3px rgba(125,255,207,.75), 0 0 28px rgba(125,255,207,.5)' },
+        { transform: 'none' }
+      ], { duration: 900, easing: 'cubic-bezier(.22,1,.36,1)' });
+    });
+    var p = document.querySelector('#todayPresets .preset.sel'), c = $('todayCard');
+    if (p && p.animate && c && c.dataset.iso === iso) {
+      p.animate([{ transform: 'scale(.9)' }, { transform: 'scale(1.07)', offset: .6 }, { transform: 'none' }],
+        { duration: 550, easing: 'cubic-bezier(.2,.9,.3,1.25)' });
+    }
+  }
+
   /* ---------- lưu tức thì: cập nhật giao diện trước, gửi lên sheet chạy ngầm ---------- */
   function save(iso, h, ra) {
     var r = byIso[iso];
@@ -1166,6 +1206,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     reagg();
     closeSheet();
     render();
+    flashSaved(iso);
     toast('Đã lưu ✓');
     if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
 
@@ -1230,10 +1271,10 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     if (rl) { rl.classList.remove('spin'); void rl.offsetWidth; rl.classList.add('spin'); load(); return; }
 
     var sg = e.target.closest('[data-part]');
-    if (sg) { part = Number(sg.dataset.part); render(true); return; }
+    if (sg) { part = Number(sg.dataset.part); $('list').dataset.dir = ''; render(true); return; }
 
     var mt = e.target.closest('[data-metric]');
-    if (mt) { metric = mt.dataset.metric; render(); return; }
+    if (mt) { metric = mt.dataset.metric; render(true); return; }
 
     var cm = e.target.closest('[data-m]');
     if (cm) { ch.m = Number(cm.dataset.m); chDay = null; render(); return; }
@@ -1255,10 +1296,10 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
   });
 
   $('hPrev').onclick = function () {
-    cur.m--; if (cur.m < 1) { cur.m = 12; cur.y--; } part = defaultPart(); render(true);
+    cur.m--; if (cur.m < 1) { cur.m = 12; cur.y--; } part = defaultPart(); $('list').dataset.dir = 'prev'; render(true);
   };
   $('hNext').onclick = function () {
-    cur.m++; if (cur.m > 12) { cur.m = 1; cur.y++; } part = defaultPart(); render(true);
+    cur.m++; if (cur.m > 12) { cur.m = 1; cur.y++; } part = defaultPart(); $('list').dataset.dir = 'next'; render(true);
   };
   $('cPrev').onclick = function () { ch.y--; chDay = null; clampChart(); render(true); };
   $('cNext').onclick = function () { ch.y++; chDay = null; clampChart(); render(true); };
@@ -1290,6 +1331,24 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
       else if (tab === 'chart') $(back ? 'cPrev' : 'cNext').click();
     }
   });
+
+  /* vuốt ngang ở tab Lịch sử để đổi tháng (vuốt phải = tháng trước) */
+  (function () {
+    var sx = 0, sy = 0, st = 0, on = false;
+    document.addEventListener('touchstart', function (e) {
+      on = e.touches.length === 1 && tab === 'hist' && $('sheet').hidden && !e.target.closest('.seg, input');
+      if (!on) return;
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now();
+    }, { passive: true });
+    document.addEventListener('touchend', function (e) {
+      if (!on) return;
+      on = false;
+      var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      if (Date.now() - st > 600 || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return;
+      var b = $(dx > 0 ? 'hPrev' : 'hNext');
+      if (!b.disabled) b.click();
+    }, { passive: true });
+  })();
 
   $('homeStats').innerHTML = statsHtml('home');
   $('histStats').innerHTML = statsHtml('hist');
