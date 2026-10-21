@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "HILL Overtime – Tăng ca",
+  "short_name": "HILL",
+  "description": "Theo dõi giờ và tiền tăng ca",
+  "lang": "vi",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#34107f",
+  "theme_color": "#4c1d95",
+  "categories": ["productivity", "finance"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

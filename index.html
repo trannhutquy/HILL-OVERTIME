@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4c1d95">
+<meta name="description" content="Theo dõi giờ và tiền tăng ca">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HILL">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>HILL Overtime</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --tint:rgba(26,12,86,.38);
+  --ink:#fff;
+  --ink-2:rgba(255,255,255,.82);
+  --ink-3:rgba(255,255,255,.64);
+  --stroke:rgba(255,255,255,.3);
+  --aqua:#a5f3fc;
+  --aqua-2:#7dd3fc;
+  --lilac:#c4b5fd;
+  --night:#1e1b4b;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --spring:cubic-bezier(.2,.9,.3,1.25);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:#34107f}
+body{margin:0;min-height:100vh;color:var(--ink);
+  font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:15px;line-height:1.4;font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+
+/* ---------- nền gradient tím → xanh nước + các đốm sáng trôi chậm ---------- */
+.bg{position:fixed;inset:0;z-index:-1;overflow:hidden;
+  background:linear-gradient(165deg,#34107f 0%,#5a35d8 40%,#3f86e6 76%,#4fb6ec 100%)}
+.orb{position:absolute;border-radius:50%;will-change:transform}
+.o1{width:80vmax;height:80vmax;left:-30vmax;top:-30vmax;
+  background:radial-gradient(circle,rgba(196,181,253,.85),rgba(124,58,237,0) 62%);
+  animation:drift1 24s ease-in-out infinite alternate}
+.o2{width:70vmax;height:70vmax;right:-30vmax;top:22vh;
+  background:radial-gradient(circle,rgba(125,211,252,.8),rgba(56,189,248,0) 62%);
+  animation:drift2 28s ease-in-out infinite alternate}
+.o3{width:64vmax;height:64vmax;left:-14vmax;bottom:-34vmax;
+  background:radial-gradient(circle,rgba(165,243,252,.65),rgba(34,211,238,0) 62%);
+  animation:drift3 32s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate3d(22vmax,14vmax,0) scale(1.15)}}
+@keyframes drift2{to{transform:translate3d(-20vmax,-12vmax,0) scale(1.1)}}
+@keyframes drift3{to{transform:translate3d(18vmax,-16vmax,0) scale(1.2)}}
+
+/* ---------- kính lỏng ---------- */
+.glass{
+  position:relative;
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,.05) 46%,rgba(255,255,255,.12) 100%),
+    var(--tint);
+  -webkit-backdrop-filter:blur(22px) saturate(170%);
+  backdrop-filter:blur(22px) saturate(170%);
+  border:1px solid var(--stroke);
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.55),
+    inset 0 -1px 1px rgba(255,255,255,.1),
+    0 12px 30px rgba(24,10,80,.34);
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .glass{background:rgba(58,36,150,.88)}
+}
+
+.wrap{position:relative;max-width:640px;margin:0 auto;
+  padding:calc(14px + env(safe-area-inset-top)) 14px calc(112px + env(safe-area-inset-bottom))}
+
+/* ---------- thanh tháng ---------- */
+.bar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.month{flex:1;text-align:center;font-weight:700;font-size:20px;letter-spacing:-.01em;
+  text-shadow:0 2px 14px rgba(24,10,80,.35)}
+.month.left{text-align:left;padding-left:4px}
+.month.left small{display:block;font-size:12.5px;font-weight:500;color:var(--ink-3);text-shadow:none}
+.swap{animation:swap .45s var(--ease) both}
+@keyframes swap{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.icon{width:46px;height:46px;padding:0;border-radius:50%;display:grid;place-items:center;
+  transition:transform .3s var(--spring),opacity .2s}
+.icon:active{transform:scale(.86)}
+.icon:disabled{opacity:.4;pointer-events:none}
+.icon svg{width:20px;height:20px}
+.icon.spin svg{animation:spin .8s linear}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- thống kê ---------- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{border-radius:26px;padding:14px 18px;animation:rise .8s var(--ease) both;animation-delay:calc(var(--k) * 90ms)}
+.stat.money{grid-column:1/-1;padding-top:16px;padding-bottom:16px}
+.stat small{display:block;color:var(--ink-3);font-size:12.5px;font-weight:500}
+.stat span{display:block;font-weight:700;font-size:24px;letter-spacing:-.01em}
+.stat.money span{font-size:34px;font-weight:800;letter-spacing:-.03em;
+  text-shadow:0 2px 22px rgba(165,243,252,.5)}
+@keyframes rise{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+.year{display:inline-flex;align-items:center;margin:12px 2px 14px;padding:7px 14px;
+  border-radius:999px;font-size:12.5px;color:var(--ink-2)}
+.sect{margin:4px 6px 10px;font-weight:700;font-size:16px}
+
+/* ---------- thẻ hôm nay ---------- */
+.card{border-radius:28px;padding:16px;margin-bottom:14px;overflow:hidden}
+.card::after{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.2),transparent);
+  transform:skewX(-18deg);animation:sheen 8s ease-in-out infinite}
+@keyframes sheen{0%,62%{left:-60%}100%{left:140%}}
+.card h2{margin:0 0 2px;font-size:17px;font-weight:700}
+.status{color:var(--ink-2);font-size:13px;margin-bottom:12px}
+.status::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:rgba(255,255,255,.45);margin-right:8px;transition:background .3s,box-shadow .3s}
+.status.ok::before{background:#7dffcf;box-shadow:0 0 10px #7dffcf}
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.preset{position:relative;text-align:left;padding:12px 14px;border-radius:18px;
+  border:1px solid rgba(255,255,255,.24);background:rgba(255,255,255,.12);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.38);
+  transition:transform .3s var(--spring),background .25s,box-shadow .25s,border-color .25s}
+.preset b{display:block;font-size:17px;font-weight:700}
+.preset small{color:var(--ink-2);font-size:12.5px}
+.preset.off b{color:#fecdd3}
+.preset.sel{background:linear-gradient(135deg,rgba(196,181,253,.5),rgba(125,211,252,.5));
+  border-color:rgba(255,255,255,.65);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 22px rgba(125,211,252,.4)}
+.preset:active{transform:scale(.94)}
+@media (hover:hover){.preset:hover{background:rgba(255,255,255,.2);transform:translateY(-2px)}}
+
+/* ---------- thanh chọn (cụm 10 ngày / giờ-tiền) ---------- */
+.seg{display:grid;grid-template-columns:repeat(3,1fr);padding:5px;border-radius:24px;margin-bottom:14px}
+.seg.two{grid-template-columns:1fr 1fr}
+.seg .thumb{position:absolute;top:5px;bottom:5px;left:5px;width:calc((100% - 10px) / 3);border-radius:19px;
+  background:linear-gradient(135deg,rgba(196,181,253,.9),rgba(125,211,252,.92));
+  box-shadow:0 6px 20px rgba(125,211,252,.4),inset 0 1px 0 rgba(255,255,255,.75);
+  transform:translateX(calc(var(--i) * 100%));
+  transition:transform .55s var(--spring)}
+.seg.two .thumb{width:calc((100% - 10px) / 2)}
+.seg button{position:relative;z-index:1;background:none;border:0;padding:9px 4px;border-radius:19px;
+  line-height:1.25;text-align:center;transition:color .3s}
+.seg button b{display:block;font-weight:700}
+.seg button small{display:block;font-weight:500;font-size:11.5px;color:var(--ink-3);transition:color .3s}
+.seg button.on{color:var(--night)}
+.seg button.on small{color:rgba(30,27,75,.75)}
+
+/* ---------- danh sách ngày ---------- */
+.row{display:flex;align-items:center;gap:12px;border-radius:22px;padding:10px 14px;margin-bottom:10px;
+  cursor:pointer;transition:transform .3s var(--spring)}
+.row:active{transform:scale(.97)}
+.enter .row{animation:rise .55s var(--ease) both;animation-delay:var(--d,0ms)}
+.row.future{opacity:.62}
+.row.rest{--tint:rgba(150,16,62,.62);border-color:rgba(255,170,195,.6);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.55),inset 0 -1px 1px rgba(255,255,255,.1),
+    0 10px 28px rgba(190,24,93,.38)}
+.row.future.rest{opacity:.85}
+.row.rest::before{content:'';position:absolute;left:0;top:12px;bottom:12px;width:5px;border-radius:0 5px 5px 0;
+  background:linear-gradient(#ffc2d1,#ff5c86);box-shadow:0 0 14px rgba(255,92,134,.85)}
+.row.rest .date{background:linear-gradient(135deg,#f472a0,#e11d5b);border-color:rgba(255,255,255,.65);
+  box-shadow:0 4px 14px rgba(225,29,91,.5)}
+.row.rest .date small{color:rgba(255,255,255,.92)}
+.row.rest .ra{color:#ffe1e9;font-size:17px;font-weight:700}
+.row.today::after{content:'';position:absolute;inset:-2px;border-radius:24px;pointer-events:none;
+  border:2px solid rgba(165,243,252,.95);animation:glow 2.6s ease-in-out infinite}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(125,211,252,0);opacity:.8}
+  50%{box-shadow:0 0 22px 2px rgba(125,211,252,.55);opacity:1}}
+.date{flex:none;width:48px;height:48px;border-radius:50%;display:grid;place-content:center;text-align:center;
+  line-height:1.05;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.26)}
+.date b{font-size:18px;font-weight:700}
+.date small{font-size:10.5px;color:var(--ink-3)}
+.mid{flex:1;min-width:0}
+.ra{font-weight:600;margin-bottom:2px}
+.tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:600;
+  background:rgba(165,243,252,.2);color:#d9f9ff;border:1px solid rgba(165,243,252,.42)}
+.tag.muted{background:rgba(255,255,255,.1);color:var(--ink-3);border-color:rgba(255,255,255,.18);font-weight:500}
+.tag.off{background:#ffd9e2;color:#7f1238;border-color:transparent}
+.right{text-align:right}
+.right b{display:block;font-weight:700}
+.right small{display:block;color:var(--ink-2);font-size:12.5px}
+
+/* ---------- biểu đồ ---------- */
+.chartcard{border-radius:26px;padding:14px 12px 10px;margin-bottom:14px}
+.chartcard h3{margin:0 6px 6px;font-size:15px;font-weight:700}
+.chartcard h3 small{font-weight:500;color:var(--ink-3);font-size:12.5px;margin-left:6px}
+svg.chart{display:block;width:100%;height:auto;overflow:visible}
+.ct{fill:var(--ink-2);font-size:11px;font-weight:600;font-family:inherit}
+.ct.dim{fill:var(--ink-3);font-weight:500;font-size:11.5px}
+.ct.hi{fill:#fff;font-weight:700}
+.col{cursor:pointer}
+.col .bar{transition:opacity .25s,filter .25s}
+.col.sel .bar{filter:drop-shadow(0 0 7px rgba(165,243,252,.75))}
+.cap{min-height:21px;margin:4px 6px 2px;color:var(--ink-2);font-size:13px}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.chip{border-radius:22px;padding:12px 14px}
+.chip.wide{grid-column:1/-1}
+.chip small{display:block;color:var(--ink-3);font-size:12px;font-weight:500}
+.chip b{display:block;font-size:18px;font-weight:700;margin-top:2px;letter-spacing:-.01em}
+.chip.up b{color:#7dffcf}
+.chip.down b{color:#fecdd3}
+.dl{display:grid;grid-template-columns:78px 1fr 62px;align-items:center;gap:10px;margin:8px 4px}
+.dk{font-weight:600;font-size:13.5px}
+.dt{display:block;height:10px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden}
+.dt i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--aqua),var(--lilac));
+  transition:width .6s var(--ease)}
+.dn{text-align:right;font-size:12.5px;color:var(--ink-2)}
+.empty{padding:6px;color:var(--ink-3);font-size:13px}
+
+/* ---------- thanh công cụ dưới ---------- */
+.tabbar{position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(12px + env(safe-area-inset-bottom));z-index:5;
+  width:min(calc(100% - 28px),440px);display:grid;grid-template-columns:repeat(4,1fr);
+  padding:6px;border-radius:30px}
+.tabbar .thumb{position:absolute;top:6px;bottom:6px;left:6px;width:calc((100% - 12px) / 4);border-radius:24px;
+  background:linear-gradient(135deg,rgba(196,181,253,.92),rgba(125,211,252,.94));
+  box-shadow:0 6px 20px rgba(125,211,252,.4),inset 0 1px 0 rgba(255,255,255,.75);
+  transform:translateX(calc(var(--i) * 100%));
+  transition:transform .55s var(--spring)}
+.tabbar button{position:relative;z-index:1;background:none;border:0;padding:9px 4px 8px;border-radius:24px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:11px;font-weight:600;color:var(--ink-3);transition:color .3s,transform .3s var(--spring)}
+.tabbar button:active{transform:scale(.92)}
+.tabbar button svg{width:22px;height:22px}
+.tabbar button.on{color:var(--night)}
+
+/* ---------- khung nhập (bottom sheet) ---------- */
+.sheet{position:fixed;inset:0;z-index:10;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(18,8,60,.5);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  animation:fade .3s ease both}
+.sheet[hidden]{display:none}
+.sheet.closing{animation:fadeOut .22s ease both}
+.panel{--tint:rgba(30,16,100,.66);width:100%;max-width:640px;border-radius:32px 32px 0 0;border-bottom:0;
+  padding:12px 16px calc(18px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;
+  animation:sheetUp .55s var(--ease) both}
+.sheet.closing .panel{animation:sheetDown .22s ease-in both}
+.grab{width:44px;height:5px;border-radius:9px;background:rgba(255,255,255,.42);margin:0 auto 14px}
+.panel h3{margin:0 0 14px;font-size:18px;font-weight:700}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes fadeOut{to{opacity:0}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+@keyframes sheetDown{to{transform:translateY(100%)}}
+.custom{display:grid;grid-template-columns:1fr 1.4fr;gap:9px;margin-top:14px}
+input{width:100%;padding:13px 14px;border-radius:16px;font:inherit;font-size:16px;color:#fff;outline:none;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);
+  transition:border-color .2s,box-shadow .2s,background .2s}
+input::placeholder{color:rgba(255,255,255,.55)}
+input:focus{border-color:var(--aqua);background:rgba(255,255,255,.18);box-shadow:0 0 0 4px rgba(165,243,252,.22)}
+.hint{color:var(--ink-3);font-size:12.5px;margin-top:10px}
+.primary,.ghost{width:100%;margin-top:10px;padding:14px;border-radius:18px;font-weight:700;
+  transition:transform .3s var(--spring),box-shadow .25s}
+.primary{border:0;color:var(--night);
+  background:linear-gradient(135deg,var(--lilac),var(--aqua-2));
+  box-shadow:0 10px 26px rgba(125,211,252,.4),inset 0 1px 0 rgba(255,255,255,.75)}
+.ghost{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3)}
+.primary:active,.ghost:active{transform:scale(.96)}
+:focus-visible{outline:3px solid var(--aqua);outline-offset:2px}
+
+/* ---------- thông báo ---------- */
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));z-index:20;max-width:90%;
+  padding:11px 20px;border-radius:999px;text-align:center;font-weight:600;
+  transform:translate(-50%,16px) scale(.96);opacity:0;pointer-events:none;
+  transition:opacity .3s,transform .45s var(--spring)}
+.toast.show{opacity:1;transform:translate(-50%,0) scale(1)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important}
+}
+
+/* ---------- hướng dẫn sử dụng ---------- */
+.gd{border-radius:24px;margin-bottom:12px;overflow:hidden}
+.gd summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:16px 18px;font-weight:700;font-size:16.5px}
+.gd summary::-webkit-details-marker{display:none}
+.gd summary i{flex:none;width:9px;height:9px;border-right:2.4px solid var(--ink-2);border-bottom:2.4px solid var(--ink-2);
+  transform:rotate(45deg) translate(-2px,-2px);transition:transform .35s var(--spring)}
+.gd.on summary i{transform:rotate(225deg) translate(-2px,-2px)}
+.gd summary{-webkit-user-select:none;user-select:none}
+.gb{padding:0 18px 18px;color:var(--ink-2);font-size:14.5px;line-height:1.65}
+.gb p{margin:0 0 10px}
+.gb b{color:#fff;font-weight:700}
+.gb h4{margin:16px 0 6px;font-size:14.5px;font-weight:700;color:#fff}
+.gb ul{margin:0 0 10px;padding-left:20px}
+.gb li{margin-bottom:5px}
+.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.steps li{counter-increment:s;display:flex;gap:12px;margin:0 0 12px;padding:0}
+.steps li::before{content:counter(s);flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+  font-weight:700;font-size:13px;color:var(--night);background:linear-gradient(135deg,var(--lilac),var(--aqua-2))}
+.formula{margin:4px 0 12px;padding:14px 16px;border-radius:18px;text-align:center;font-weight:800;font-size:17px;
+  color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3)}
+.ptable{margin:6px 0 12px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.22)}
+.ptable div{display:grid;grid-template-columns:1.1fr 1fr 1.2fr;gap:8px;padding:9px 14px;font-size:14px}
+.ptable div:nth-child(even){background:rgba(255,255,255,.08)}
+.ptable .th{font-size:12px;color:var(--ink-3);font-weight:600;background:rgba(255,255,255,.04)!important}
+.ptable span:last-child{text-align:right}
+.note{margin:12px 0 0;padding:12px 14px;border-radius:16px;background:rgba(255,92,134,.2);
+  border:1px solid rgba(255,170,195,.5);color:#ffe9ef}
+.note b{color:#fff}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:baseline}
+.qa dt{font-weight:700;color:#fff;margin-top:12px}
+.qa dd{margin:2px 0 0}
+kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-align:center;
+  font:600 11.5px/20px "Be Vietnam Pro",system-ui,sans-serif;background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.3);color:var(--ink-2)}
+
+/* ---------- khung chung (điện thoại: xếp dọc, thanh dưới) ---------- */
+.shell{display:block}
+.side{display:contents}
+.brand,.sidecard{display:none}
+.cols,.cgrid,.chead{display:block}
+@keyframes modalIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes modalOut{to{opacity:0;transform:translateY(8px) scale(.97)}}
+
+/* ======================= LAPTOP / MÁY TÍNH (từ 1024px) ======================= */
+@media (min-width:1024px){
+  body{font-size:15.5px}
+  .shell{display:grid;grid-template-columns:240px minmax(0,1fr);gap:28px;max-width:1380px;
+    margin:0 auto;padding:0 32px;align-items:start}
+
+  /* thanh bên trái thay cho thanh công cụ dưới */
+  .side{display:flex;flex-direction:column;gap:16px;position:sticky;top:0;
+    padding-top:calc(28px + env(safe-area-inset-top))}
+  .brand{display:block;padding:4px 12px 2px}
+  .brand b{display:block;font-size:26px;font-weight:800;letter-spacing:-.03em;
+    text-shadow:0 2px 18px rgba(165,243,252,.45)}
+  .brand small{display:block;color:var(--ink-3);font-size:13px;font-weight:500}
+  .tabbar{--bh:56px;position:relative;left:auto;bottom:auto;transform:none;width:auto;
+    display:flex;flex-direction:column;padding:8px;border-radius:28px;z-index:1}
+  .tabbar .thumb{left:8px;right:8px;top:8px;bottom:auto;width:auto;height:var(--bh);border-radius:22px;
+    transform:translateY(calc(var(--i) * var(--bh)))}
+  .tabbar button{flex-direction:row;justify-content:flex-start;gap:14px;height:var(--bh);
+    padding:0 18px;font-size:15px;border-radius:22px}
+  .tabbar button svg{width:22px;height:22px}
+  .sidecard{display:block;border-radius:26px;padding:16px 18px}
+  .sidecard small{display:block;color:var(--ink-3);font-size:12.5px;font-weight:500}
+  .sidecard b{display:block;font-size:24px;font-weight:800;letter-spacing:-.02em;margin:2px 0}
+  .sidecard span{display:block;color:var(--ink-2);font-size:13.5px}
+  .sidecard .keys{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.2);
+    color:var(--ink-3);font-size:12px;line-height:1.9}
+  kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-align:center;
+    font:600 11.5px/20px inherit;font-family:inherit;background:rgba(255,255,255,.14);
+    border:1px solid rgba(255,255,255,.3);color:var(--ink-2)}
+
+  /* nội dung */
+  .wrap{max-width:none;margin:0;padding:calc(28px + env(safe-area-inset-top)) 0 48px}
+  .bar{margin-bottom:18px}
+  .month{font-size:24px}
+  .cols{display:grid;gap:20px;align-items:start}
+  .cols.home{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}
+  .cols.hist{grid-template-columns:330px minmax(0,1fr)}
+  .cl.stick{position:sticky;top:24px}
+  .year{margin-bottom:16px}
+  .sect{font-size:17px}
+
+  /* lịch sử: hiện cả tháng, 2 cột, không cần chia cụm 10 ngày */
+  #seg{display:none}
+  #list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  #list .row{margin-bottom:0}
+
+  /* biểu đồ: 2 cột */
+  .chead{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:20px}
+  .chead .bar{margin:0;width:340px}
+  .chead .seg{width:300px;margin:0}
+  .cgrid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:20px;align-items:start}
+  .cgrid .chartcard,.cgrid .chips{margin-bottom:0}
+  .chartcard{padding:18px 18px 14px}
+  .chartcard h3{font-size:16px}
+
+  /* khung nhập: hộp thoại giữa màn hình thay vì kéo từ đáy */
+  .sheet{align-items:center;padding:24px}
+  .panel{max-width:500px;border-radius:32px;border-bottom:1px solid var(--stroke);padding:20px 22px;
+    animation:modalIn .4s var(--ease) both}
+  .sheet.closing .panel{animation:modalOut .2s ease-in both}
+  .grab{display:none}
+  .toast{bottom:32px}
+  .guide{max-width:860px}
+  .gd summary{font-size:17px}
+  .gb{font-size:15px}
+}
+@media (min-width:1024px) and (hover:hover){
+  .row:hover{transform:translateY(-2px)}
+  .col:hover .bar{opacity:1}
+  .tabbar button:not(.on):hover{color:#fff}
+}
+</style>
+<style>
+/* ---------- phần thêm cho PWA ---------- */
+.netbar{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:15;
+  padding:6px 14px;border-radius:999px;font-size:12.5px;font-weight:600;white-space:nowrap;pointer-events:none}
+.netbar[hidden]{display:none}
+#hillLock{z-index:30}
+@media (min-width:1024px){
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand img{width:44px;height:44px;flex:none}
+  .brand b{font-size:21px}
+}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true"><i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i></div>
+
+<div class="shell">
+
+<aside class="side">
+  <div class="brand"><img src="icons/logo-mark.png" alt="" width="44" height="44"><div><b>HILL Overtime</b><small>Theo dõi giờ và tiền</small></div></div>
+
+  <nav class="tabbar glass" id="tabbar" style="--i:0" aria-label="Điều hướng">
+    <span class="thumb"></span>
+    <button data-tab="home" class="on">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7.5 9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-6h4v6"/></svg>
+      Home
+    </button>
+    <button data-tab="hist">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg>
+      Lịch sử
+    </button>
+    <button data-tab="chart">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-8"/><path d="M22 20H2"/></svg>
+      Biểu đồ
+    </button>
+    <button data-tab="guide">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.1-2.4 3.8"/><path d="M12 17.2h.01"/></svg>
+      Hướng dẫn
+    </button>
+  </nav>
+
+  <div class="sidecard glass">
+    <small id="sideLabel">Tháng này</small>
+    <b id="sideMoney">–</b>
+    <span id="sideHours">–</span>
+    <div class="keys"><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd> đổi mục<br><kbd>←</kbd> <kbd>→</kbd> đổi tháng / năm<br><kbd>Esc</kbd> đóng hộp nhập</div>
+  </div>
+</aside>
+
+<div class="wrap">
+
+  <!-- ===================== HOME ===================== -->
+  <section class="view" id="v-home">
+    <div class="bar">
+      <div class="month left" id="homeMonth">…</div>
+      <button class="icon glass js-reload" aria-label="Tải lại"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
+    </div>
+    <div class="cols home">
+      <div class="cl">
+        <div class="stats" id="homeStats"></div>
+        <div class="year glass" id="homeYear"></div>
+        <section class="card glass" id="todayCard" hidden>
+          <h2 id="todayTitle"></h2>
+          <div class="status" id="todayStatus"></div>
+          <div class="presets" id="todayPresets"></div>
+        </section>
+      </div>
+      <div class="cl">
+        <div class="sect">7 ngày gần đây</div>
+        <div id="homeList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LỊCH SỬ ===================== -->
+  <section class="view" id="v-hist" hidden>
+    <div class="bar">
+      <button class="icon glass" id="hPrev" aria-label="Tháng trước"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="month" id="monthLabel">…</div>
+      <button class="icon glass" id="hNext" aria-label="Tháng sau"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+      <button class="icon glass js-reload" aria-label="Tải lại"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
+    </div>
+    <div class="cols hist">
+      <div class="cl stick">
+        <div class="stats" id="histStats"></div>
+        <div class="year glass" id="histYear"></div>
+        <div class="seg glass" id="seg" style="--i:0">
+          <span class="thumb"></span>
+          <button data-part="0"></button>
+          <button data-part="1"></button>
+          <button data-part="2"></button>
+        </div>
+      </div>
+      <div class="cl"><div id="list"></div></div>
+    </div>
+  </section>
+
+  <!-- ===================== BIỂU ĐỒ ===================== -->
+  <section class="view" id="v-chart" hidden>
+    <div class="chead">
+      <div class="bar">
+        <button class="icon glass" id="cPrev" aria-label="Năm trước"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <div class="month" id="chYear">…</div>
+        <button class="icon glass" id="cNext" aria-label="Năm sau"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+      <div class="seg two glass" id="metricSeg" style="--i:0">
+        <span class="thumb"></span>
+        <button data-metric="h"><b>Số giờ</b></button>
+        <button data-metric="t"><b>Số tiền</b></button>
+      </div>
+    </div>
+
+    <div class="cgrid">
+      <div class="chartcard glass">
+        <h3>Theo tháng<small>chạm cột để chọn tháng</small></h3>
+        <div id="monthChart"></div>
+      </div>
+
+      <div class="chips" id="chips"></div>
+
+      <div class="chartcard glass">
+        <h3 id="dailyTitle">Theo ngày</h3>
+        <div id="dailyChart"></div>
+        <div class="cap" id="dayCap"></div>
+      </div>
+
+      <div class="chartcard glass">
+        <h3 id="distTitle">Giờ ra về hay gặp</h3>
+        <div id="dist"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== HƯỚNG DẪN ===================== -->
+  <section class="view" id="v-guide" hidden>
+    <div class="bar">
+      <div class="month left"><small>Từ A đến Z, gồm cả cách tính tiền</small>Hướng dẫn sử dụng</div>
+    </div>
+    <div class="guide" id="guide"></div>
+  </section>
+</div>
+
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="panel glass" id="panel">
+    <div class="grab"></div>
+    <h3 id="sheetTitle"></h3>
+    <div class="presets" id="sheetPresets"></div>
+    <div class="custom">
+      <input id="cH" type="text" inputmode="decimal" placeholder="Số giờ, vd 4" aria-label="Số giờ">
+      <input id="cRa" type="text" placeholder="Giờ ra về, vd 9h Tối" aria-label="Giờ ra về">
+    </div>
+    <div class="hint">Nhập giờ ra về thì số giờ tự tính (mốc 17h, các giờ có nút bấm lấy đúng theo nút). Nhập số giờ thì giờ ra về tự gợi ý. Sửa lại được nếu khác.</div>
+    <button class="primary" id="cSave">Lưu giờ tuỳ chọn</button>
+    <button class="ghost" id="cClose">Đóng</button>
+  </div>
+</div>
+
+<div class="toast glass" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="pwa.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var NAMES = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+  var LONG = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+  var TABS = ['home', 'hist', 'chart', 'guide'];
+  var DATA = null, rows = [], byIso = {}, agg = {},
+      home = { y: 0, m: 0 }, cur = { y: 0, m: 0 }, ch = { y: 0, m: 0 },
+      tab = 'home', metric = 'h', chDay = null,
+      editIso = null, first = true, histSeen = false, toastTimer = null,
+      part = 0, hDirty = false, raDirty = false, closeTimer = null, seq = {};
+  var WIDE = window.matchMedia('(min-width:1024px)');
+  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var pad = function (n) { return String(n).padStart(2, '0'); };
+  var r2 = function (x) { return Math.round(x * 100) / 100; };
+  var fmtH = function (h) { return String(r2(h)).replace('.', ','); };
+  var fmtMoney = function (n) { return Math.round(n).toLocaleString('vi-VN') + ' đ'; };
+  var fmtInt = function (v) { return String(Math.round(v)); };
+  var esc = function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  };
+  var dow = function (iso) {
+    var p = iso.split('-').map(Number);
+    return new Date(p[0], p[1] - 1, p[2]).getDay();
+  };
+  var dm = function (iso) { return iso.slice(8) + '/' + iso.slice(5, 7); };
+  var monthKey = function (y, m) { return y + '-' + pad(m); };
+
+  /* số chạy mượt từ giá trị cũ sang giá trị mới */
+  function setNum(el, to, fmt) {
+    var from = el._v == null ? 0 : el._v;
+    el._v = to;
+    cancelAnimationFrame(el._raf);
+    if (from === to || REDUCED) { el.textContent = fmt(to); return; }
+    var t0 = performance.now(), dur = 600;
+    (function step(now) {
+      var k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = fmt(from + (to - from) * e);
+      if (k < 1) el._raf = requestAnimationFrame(step);
+    })(t0);
+  }
+  function swap(el) {
+    el.classList.remove('swap');
+    void el.offsetWidth;
+    el.classList.add('swap');
+  }
+
+  function toast(msg, sticky) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    if (!sticky) toastTimer = setTimeout(function () { t.classList.remove('show'); }, 1600);
+  }
+  function hideToast() { clearTimeout(toastTimer); $('toast').classList.remove('show'); }
+  function onFail(e) { toast('Lỗi: ' + ((e && e.message) || e)); }
+
+  /* ---------- dữ liệu ---------- */
+  function reindex() {
+    byIso = {};
+    rows.forEach(function (r) { byIso[r.d] = r; });
+    reagg();
+  }
+  function reagg() {
+    agg = {};
+    rows.forEach(function (r) {
+      var k = r.d.slice(0, 7), a = agg[k] || (agg[k] = { h: 0, t: 0, n: 0 });
+      if (r.h > 0) { a.h += r.h; a.t += r.t; a.n++; }
+    });
+  }
+  function aggOf(k) { return agg[k] || { h: 0, t: 0, n: 0 }; }
+  function yearAgg(y) {
+    var s = { h: 0, t: 0, n: 0 };
+    for (var m = 1; m <= 12; m++) {
+      var a = aggOf(monthKey(y, m));
+      s.h += a.h; s.t += a.t; s.n += a.n;
+    }
+    return s;
+  }
+  function sum(list) {
+    return list.reduce(function (s, r) {
+      return { h: s.h + r.h, t: s.t + r.t, n: s.n + (r.h > 0 ? 1 : 0) };
+    }, { h: 0, t: 0, n: 0 });
+  }
+
+  function presetsHtml(withMore, rec) {
+    var html = DATA.presets.map(function (p) {
+      var sel = rec && rec.h > 0 && rec.h === p.h ? ' sel' : '';
+      return '<button class="preset' + sel + '" data-h="' + p.h + '" data-ra="' + esc(p.ra) + '">' +
+        '<b>' + esc(p.ra) + '</b><small>' + fmtH(p.h) + ' giờ · ' + fmtMoney(p.h * DATA.rate) + '</small></button>';
+    }).join('');
+    html += '<button class="preset off" data-h="0" data-ra=""><b>Nghỉ</b><small>Không tăng ca</small></button>';
+    if (withMore) html += '<button class="preset" data-more="1"><b>Khác…</b><small>Giờ tuỳ chọn</small></button>';
+    return html;
+  }
+
+  function statsHtml(p) {
+    return '<div class="stat money glass" style="--k:0"><small>Tiền tháng này</small><span id="' + p + 'Money">–</span></div>' +
+      '<div class="stat glass" style="--k:1"><small>Số giờ</small><span id="' + p + 'Hours">–</span></div>' +
+      '<div class="stat glass" style="--k:2"><small>Ngày làm</small><span id="' + p + 'Days">–</span></div>';
+  }
+  function fillStats(p, y, m) {
+    var a = aggOf(monthKey(y, m)), ya = yearAgg(y);
+    setNum($(p + 'Money'), a.t, fmtMoney);
+    setNum($(p + 'Hours'), a.h, fmtH);
+    setNum($(p + 'Days'), a.n, fmtInt);
+    $(p + 'Year').textContent = 'Cả năm ' + y + ': ' + fmtH(ya.h) + ' giờ · ' + fmtMoney(ya.t);
+  }
+
+  /* ---------- vẽ từng màn hình ---------- */
+  function render(animate) {
+    if (!DATA || !rows.length) return;
+    fillSide();
+    if (tab === 'home') renderHome(animate);
+    else if (tab === 'hist') renderHist(animate);
+    else if (tab === 'chart') renderChart(animate);
+    else renderGuide();
+  }
+
+  function fillSide() {
+    var a = aggOf(monthKey(home.y, home.m));
+    $('sideLabel').textContent = 'Tháng ' + pad(home.m) + ' / ' + home.y;
+    setNum($('sideMoney'), a.t, fmtMoney);
+    setNum($('sideHours'), a.h, function (v) { return fmtH(v) + ' giờ · ' + a.n + ' ngày làm'; });
+  }
+
+  function renderHome(animate) {
+    $('homeMonth').innerHTML = '<small>Tăng ca</small>Tháng ' + pad(home.m) + ' / ' + home.y;
+    fillStats('home', home.y, home.m);
+    renderToday();
+    var recent = rows.filter(function (r) { return r.d <= DATA.today; }).slice(-7).reverse();
+    renderList($('homeList'), recent, animate);
+  }
+
+  function renderHist(animate) {
+    var key = monthKey(cur.y, cur.m);
+    var mr = rows.filter(function (r) { return r.d.indexOf(key) === 0; });
+    $('monthLabel').textContent = 'Tháng ' + pad(cur.m) + ' / ' + cur.y;
+    if (animate) swap($('monthLabel'));
+    fillStats('hist', cur.y, cur.m);
+    $('hPrev').disabled = key <= rows[0].d.slice(0, 7);
+    $('hNext').disabled = key >= rows[rows.length - 1].d.slice(0, 7);
+    renderSeg(mr);
+    renderList($('list'), WIDE.matches ? mr : mr.filter(function (r) { return inPart(r, part); }), animate);
+  }
+
+  function dayOf(r) { return Number(r.d.slice(8)); }
+  function inPart(r, p) {
+    var d = dayOf(r);
+    return p === 0 ? d <= 10 : p === 1 ? (d >= 11 && d <= 20) : d >= 21;
+  }
+  function defaultPart() {
+    var key = monthKey(cur.y, cur.m);
+    if (DATA && DATA.today.indexOf(key) === 0) {
+      var d = Number(DATA.today.slice(8));
+      return d <= 10 ? 0 : d <= 20 ? 1 : 2;
+    }
+    return 0;
+  }
+  function renderSeg(mr) {
+    var last = mr.length ? dayOf(mr[mr.length - 1]) : 31;
+    var labels = ['1–10', '11–20', '21–' + last];
+    $('seg').style.setProperty('--i', part);
+    Array.prototype.forEach.call($('seg').querySelectorAll('button'), function (b, p) {
+      var s = sum(mr.filter(function (r) { return inPart(r, p); }));
+      b.innerHTML = '<b>' + labels[p] + '</b><small>' + fmtH(s.h) + ' giờ</small>';
+      b.classList.toggle('on', p === part);
+    });
+  }
+
+  function renderToday() {
+    var t = byIso[DATA.today], card = $('todayCard');
+    if (!t) { card.hidden = true; return; }
+    card.hidden = false;
+    card.dataset.iso = t.d;
+    $('todayTitle').textContent = 'Hôm nay · ' + LONG[dow(t.d)] + ', ' + dm(t.d);
+    $('todayStatus').textContent = t.h > 0
+      ? 'Đã nhập: ' + fmtH(t.h) + ' giờ · ra về ' + t.o + ' · ' + fmtMoney(t.t)
+      : t.x ? 'Hôm nay nghỉ: ' + t.x + '. Có làm thì bấm giờ ra về bên dưới.'
+      : 'Chưa có tăng ca hôm nay';
+    $('todayStatus').className = 'status' + (t.h > 0 ? ' ok' : '');
+    $('todayPresets').innerHTML = presetsHtml(true, t);
+  }
+
+  function renderList(box, list, animate) {
+    box.classList.toggle('enter', !!animate);
+    box.innerHTML = list.map(function (r, i) {
+      var w = dow(r.d);
+      var future = r.d > DATA.today;
+      var rest = r.h === 0 && (!!r.x || r.red || w === 0 || r.d < DATA.today);
+      var cls = 'row glass' + (rest ? ' rest' : '') + (future ? ' future' : '') +
+        (r.d === DATA.today ? ' today' : '');
+      var why = r.x || (w === 0 ? 'Chủ nhật' : r.red ? 'Ngày lễ' : (r.n || 'Không sao'));
+      var mid = r.h > 0
+        ? '<div class="ra">' + esc(r.o) + '</div>' + (r.n ? '<span class="tag">' + esc(r.n) + '</span>' : '')
+        : rest
+          ? '<div class="ra">Nghỉ</div><span class="tag off">' + esc(why) + '</span>'
+          : '<span class="tag muted">' + (future ? 'Chưa tới' : 'Chưa nhập') + '</span>';
+      var right = r.h > 0
+        ? '<b>' + fmtH(r.h) + ' giờ</b><small>' + fmtMoney(r.t) + '</small>'
+        : '<small>–</small>';
+      return '<div class="' + cls + '" data-iso="' + r.d + '" style="--d:' + (Math.min(i, 10) * 40) + 'ms">' +
+        '<div class="date"><b>' + dayOf(r) + '</b><small>' + NAMES[w] + '</small></div>' +
+        '<div class="mid">' + mid + '</div><div class="right">' + right + '</div></div>';
+    }).join('');
+  }
+
+  /* ---------- biểu đồ ---------- */
+  var DEFS = function (id) {
+    return '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#a5f3fc"/><stop offset="1" stop-color="#8b7cf6"/></linearGradient></defs>';
+  };
+  function val(a) { return metric === 'h' ? a.h : a.t; }
+  function fmtVal(v) {
+    if (metric === 'h') return fmtH(v);
+    return v >= 1e6 ? String(Math.round(v / 1e5) / 10).replace('.', ',') + 'tr' : Math.round(v / 1000) + 'k';
+  }
+  function fmtFull(v) { return metric === 'h' ? fmtH(v) + ' giờ' : fmtMoney(v); }
+
+  function monthlySvg() {
+    var W = 600, H = 210, L = 4, R = 4, T = 24, B = 26, slot = (W - L - R) / 12, bw = slot * 0.58, ph = H - T - B;
+    var todayKey = DATA.today.slice(0, 7), vals = [], mx = 0, i;
+    for (i = 1; i <= 12; i++) {
+      var v0 = val(aggOf(monthKey(ch.y, i)));
+      vals.push(v0);
+      if (v0 > mx) mx = v0;
+    }
+    mx = mx || 1;
+    var s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Biểu đồ theo tháng">' + DEFS('gA') +
+      '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + (H - B) + '" y2="' + (H - B) + '" stroke="rgba(255,255,255,.25)"/>';
+    for (i = 0; i < 12; i++) {
+      var m = i + 1, v = vals[i], x0 = L + slot * i, x = x0 + (slot - bw) / 2;
+      var h = v > 0 ? Math.max(4, ph * v / mx) : 3, y = H - B - h, sel = m === ch.m;
+      var fut = monthKey(ch.y, m) > todayKey;
+      s += '<g class="col' + (sel ? ' sel' : '') + '" data-m="' + m + '">' +
+        '<rect x="' + x0 + '" y="0" width="' + slot + '" height="' + H + '" fill="transparent"/>' +
+        '<rect class="bar" x="' + x + '" y="' + y + '" width="' + bw + '" height="' + h + '" rx="7" fill="' +
+        (v > 0 ? 'url(#gA)' : 'rgba(255,255,255,.35)') + '" opacity="' + (v > 0 ? (sel ? 1 : 0.6) : (fut ? 0.25 : 0.5)) + '"/>';
+      if (v > 0) s += '<text class="ct' + (sel ? ' hi' : '') + '" x="' + (x0 + slot / 2) + '" y="' + (y - 6) + '" text-anchor="middle">' + fmtVal(v) + '</text>';
+      s += '<text class="ct dim' + (sel ? ' hi' : '') + '" x="' + (x0 + slot / 2) + '" y="' + (H - 8) + '" text-anchor="middle">T' + m + '</text></g>';
+    }
+    return s + '</svg>';
+  }
+
+  function dailySvg(mr) {
+    var W = 600, H = 170, L = 4, R = 4, T = 18, B = 22, n = mr.length || 30;
+    var slot = (W - L - R) / n, bw = Math.min(slot * 0.62, 22), ph = H - T - B, mx = 0;
+    mr.forEach(function (r) { var v = metric === 'h' ? r.h : r.t; if (v > mx) mx = v; });
+    mx = mx || 1;
+    var s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Biểu đồ theo ngày">' + DEFS('gB') +
+      '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + (H - B) + '" y2="' + (H - B) + '" stroke="rgba(255,255,255,.25)"/>';
+    mr.forEach(function (r, i) {
+      var v = metric === 'h' ? r.h : r.t, w = dow(r.d), d = dayOf(r);
+      var rest = r.h === 0 && (r.x || w === 0), fut = r.d > DATA.today, sel = r.d === chDay;
+      var x0 = L + slot * i, x = x0 + (slot - bw) / 2, h = v > 0 ? Math.max(4, ph * v / mx) : 3, y = H - B - h;
+      var fill = v > 0 ? 'url(#gB)' : rest ? '#ff7aa2' : 'rgba(255,255,255,.35)';
+      var op = fut ? 0.3 : v > 0 ? (sel ? 1 : 0.85) : 0.6;
+      s += '<g class="col' + (sel ? ' sel' : '') + '" data-day="' + r.d + '">' +
+        '<rect x="' + x0 + '" y="0" width="' + slot + '" height="' + H + '" fill="transparent"/>' +
+        '<rect class="bar" x="' + x + '" y="' + y + '" width="' + bw + '" height="' + h + '" rx="4" fill="' + fill + '" opacity="' + op + '"/>';
+      if (d === 1 || d % 5 === 0 || sel) {
+        s += '<text class="ct dim' + (sel ? ' hi' : '') + '" x="' + (x0 + slot / 2) + '" y="' + (H - 6) + '" text-anchor="middle">' + d + '</text>';
+      }
+      s += '</g>';
+    });
+    return s + '</svg>';
+  }
+
+  function chipHtml(label, value, cls) {
+    return '<div class="chip glass' + (cls ? ' ' + cls : '') + '"><small>' + esc(label) + '</small><b>' + esc(value) + '</b></div>';
+  }
+
+  function insightsHtml() {
+    var todayKey = DATA.today.slice(0, 7), key = monthKey(ch.y, ch.m), a = aggOf(key), cv = val(a);
+    var pm = ch.m === 1 ? monthKey(ch.y - 1, 12) : monthKey(ch.y, ch.m - 1), pv = val(aggOf(pm));
+    var total = 0, cnt = 0, bestM = 0, bestV = 0, m;
+    for (m = 1; m <= 12; m++) {
+      var k = monthKey(ch.y, m), v = val(aggOf(k));
+      if (v > 0 && k <= todayKey) { total += v; cnt++; }
+      if (v > bestV) { bestV = v; bestM = m; }
+    }
+    var out = '';
+    out += chipHtml('Tháng ' + pad(ch.m), fmtFull(cv));
+    out += chipHtml('Trung bình / tháng', cnt ? fmtFull(total / cnt) : '–');
+    out += chipHtml('Cao nhất năm', bestM ? 'T' + bestM + ' · ' + (metric === 'h' ? fmtH(bestV) + ' giờ' : fmtVal(bestV)) : '–');
+    if (pv > 0 && cv > 0) {
+      var pct = Math.round((cv - pv) / pv * 100);
+      out += chipHtml('So với tháng trước', (pct > 0 ? '+' : pct < 0 ? '−' : '') + Math.abs(pct) + '%', pct > 0 ? 'up' : pct < 0 ? 'down' : '');
+    } else {
+      out += chipHtml('So với tháng trước', '–');
+    }
+    if (key === todayKey && a.n > 0) {
+      var mr = rows.filter(function (r) { return r.d.indexOf(key) === 0; });
+      var rem = mr.filter(function (r) { return r.h === 0 && r.d >= DATA.today && !r.x && dow(r.d) !== 0; }).length;
+      var projH = a.h + rem * (a.h / a.n), projT = a.h > 0 ? a.t + rem * (a.h / a.n) * (a.t / a.h) : 0;
+      out += chipHtml('Dự báo cuối tháng (còn ' + rem + ' ngày làm)', fmtFull(metric === 'h' ? projH : projT), 'wide');
+    }
+    return out;
+  }
+
+  function distHtml() {
+    var cnt = {};
+    rows.forEach(function (r) {
+      if (r.h > 0 && r.d.indexOf(ch.y + '-') === 0) { var k = r.o || '—'; cnt[k] = (cnt[k] || 0) + 1; }
+    });
+    var arr = Object.keys(cnt).map(function (k) { return { k: k, c: cnt[k] }; })
+      .sort(function (a, b) { return b.c - a.c; }).slice(0, 5);
+    if (!arr.length) return '<div class="empty">Chưa có dữ liệu trong năm này.</div>';
+    var mx = arr[0].c;
+    return arr.map(function (x) {
+      return '<div class="dl"><span class="dk">' + esc(x.k) + '</span><span class="dt"><i style="width:' +
+        Math.round(x.c / mx * 100) + '%"></i></span><span class="dn">' + x.c + ' ngày</span></div>';
+    }).join('');
+  }
+
+  function dayCaption() {
+    var r = chDay && byIso[chDay];
+    if (!r) return 'Chạm vào cột để xem chi tiết từng ngày';
+    var head = LONG[dow(r.d)] + ', ' + dm(r.d) + ': ';
+    return head + (r.h > 0 ? fmtH(r.h) + ' giờ · ' + fmtMoney(r.t) + ' · ra về ' + r.o : (r.x ? 'Nghỉ (' + r.x + ')' : 'Không tăng ca'));
+  }
+
+  function renderChart(animate) {
+    var y0 = Number(rows[0].d.slice(0, 4)), y1 = Number(rows[rows.length - 1].d.slice(0, 4));
+    $('chYear').textContent = 'Năm ' + ch.y;
+    if (animate) swap($('chYear'));
+    $('cPrev').disabled = ch.y <= y0;
+    $('cNext').disabled = ch.y >= y1;
+    $('metricSeg').style.setProperty('--i', metric === 'h' ? 0 : 1);
+    Array.prototype.forEach.call($('metricSeg').querySelectorAll('button'), function (b) {
+      b.classList.toggle('on', b.dataset.metric === metric);
+    });
+    $('monthChart').innerHTML = monthlySvg();
+    $('chips').innerHTML = insightsHtml();
+    var key = monthKey(ch.y, ch.m);
+    var mr = rows.filter(function (r) { return r.d.indexOf(key) === 0; });
+    $('dailyTitle').innerHTML = 'Theo ngày<small>Tháng ' + pad(ch.m) + ' / ' + ch.y + '</small>';
+    $('dailyChart').innerHTML = mr.length ? dailySvg(mr) : '<div class="empty">Chưa có dòng ngày cho tháng này.</div>';
+    $('dayCap').textContent = dayCaption();
+    $('distTitle').innerHTML = 'Giờ ra về hay gặp<small>Năm ' + ch.y + '</small>';
+    $('dist').innerHTML = distHtml();
+  }
+
+
+  /* ---------- hướng dẫn sử dụng (số liệu lấy từ cấu hình thật của app) ---------- */
+  var guideKey = '';
+  function gSec(title, open, inner) {
+    return '<details class="gd glass' + (open ? ' on' : '') + '"' + (open ? ' open' : '') + '><summary><span>' + title +
+      '</span><i aria-hidden="true"></i></summary><div class="gb">' + inner + '</div></details>';
+  }
+  function gSteps(list) {
+    return '<ol class="steps">' + list.map(function (t) { return '<li><span>' + t + '</span></li>'; }).join('') + '</ol>';
+  }
+  function gList(list) {
+    return '<ul>' + list.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>';
+  }
+
+  /* ---------- hiệu ứng sổ xuống nhẹ nhàng: khung giãn ra, chữ lần lượt hiện theo ---------- */
+  var EASE_OUT = 'cubic-bezier(.22,1,.36,1)', EASE_IO = 'cubic-bezier(.4,0,.2,1)';
+  function toggleGuide(d) {
+    var body = d.querySelector('.gb');
+    if (!body) return;
+    var curH = body.getBoundingClientRect().height;          // chiều cao đang hiển thị (kể cả giữa chừng)
+    (d._a || []).forEach(function (a) { try { a.cancel(); } catch (e) {} });
+    d._a = [];
+    body.style.overflow = '';
+    var tok = d._tok = (d._tok || 0) + 1;
+    var opening = !d.classList.contains('on');
+
+    if (REDUCED || !body.animate) { d.open = opening; d.classList.toggle('on', opening); return; }
+    d.classList.toggle('on', opening);
+
+    if (opening) {
+      var wasClosed = !d.open;
+      d.open = true;
+      var full = body.offsetHeight;
+      var pad = parseFloat(getComputedStyle(body).paddingBottom) || 0;
+      var start = wasClosed ? 0 : Math.min(curH, full);
+      body.style.overflow = 'hidden';
+      var a = body.animate(
+        [{ height: start + 'px', paddingBottom: (start ? pad : 0) + 'px' },
+         { height: full + 'px', paddingBottom: pad + 'px' }],
+        { duration: 560, easing: EASE_OUT });
+      var done = function () { if (d._tok === tok) { body.style.overflow = ''; } };
+      a.onfinish = done; a.oncancel = done;
+      d._a.push(a);
+      if (wasClosed) {
+        var items = [];
+        Array.prototype.forEach.call(body.children, function (c) {
+          if (/^(UL|OL|DL)$/.test(c.tagName)) Array.prototype.forEach.call(c.children, function (x) { items.push(x); });
+          else items.push(c);
+        });
+        items.forEach(function (el, i) {
+          d._a.push(el.animate(
+            [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }],
+            { duration: 460, delay: 110 + Math.min(i, 14) * 45, easing: EASE_OUT, fill: 'backwards' }));
+        });
+      }
+    } else {
+      var padC = parseFloat(getComputedStyle(body).paddingBottom) || 0;
+      body.style.overflow = 'hidden';
+      var c = body.animate(
+        [{ height: curH + 'px', paddingBottom: padC + 'px', opacity: 1 },
+         { height: '0px', paddingBottom: '0px', opacity: 0 }],
+        { duration: 380, easing: EASE_IO, fill: 'forwards' });
+      c.onfinish = function () {
+        if (d._tok !== tok) return;
+        d.open = false;
+        body.style.overflow = '';
+        c.cancel();
+      };
+      d._a.push(c);
+    }
+  }
+
+  function renderGuide() {
+    var box = $('guide');
+    var a = aggOf(monthKey(home.y, home.m));
+    var key = JSON.stringify([DATA.rate, DATA.presets, a.h, a.t]);
+    if (key === guideKey) return;
+    var was = Array.prototype.map.call(box.querySelectorAll('details'), function (d) { return d.open; });
+    guideKey = key;
+
+    var rate = DATA.rate, money = fmtMoney(rate);
+    var table = '<div class="ptable"><div class="th"><span>Giờ ra về</span><span>Số giờ</span><span>Số tiền</span></div>' +
+      DATA.presets.map(function (p) {
+        return '<div><span><b>' + esc(p.ra) + '</b></span><span>' + fmtH(p.h) + ' giờ</span><span>' + fmtMoney(p.h * rate) + '</span></div>';
+      }).join('') + '</div>';
+    var sample = (a.h > 0 && Math.round(a.h * rate) === Math.round(a.t))
+      ? '<p>Ví dụ tháng ' + pad(home.m) + ' của bạn: <b>' + fmtH(a.h) + ' giờ × ' + money + ' = ' + fmtMoney(a.t) + '</b>.</p>' : '';
+
+    var h = '';
+
+    h += gSec('1. App này dùng để làm gì?', true,
+      '<p>Ghi lại giờ tăng ca mỗi ngày, <b>tự tính tiền</b> và lưu thẳng vào Google Trang tính (tab <b>THỐNG KÊ</b>). Bạn chỉ cần bấm, không phải mở sheet.</p>' +
+      gList([
+        '<b>Home</b>: tiền và giờ của tháng này, nhập giờ cho hôm nay, xem 7 ngày gần đây.',
+        '<b>Lịch sử</b>: xem lại và sửa bất kỳ ngày nào, theo từng tháng.',
+        '<b>Biểu đồ</b>: so sánh các tháng, từng ngày trong tháng, dự báo cuối tháng.',
+        '<b>Hướng dẫn</b>: chính trang này.'
+      ]));
+
+    h += gSec('2. Cách dùng mỗi ngày (từng bước)', true,
+      gSteps([
+        'Mở app, vào <b>Home</b>. Thẻ <b>Hôm nay</b> nằm ngay đầu trang.',
+        'Hết giờ làm, bấm nút <b>giờ ra về</b> đúng với bạn (ví dụ <b>8h30 Tối</b>). Số giờ và tiền hiện ngay, kèm thông báo <b>Đã lưu ✓</b>.',
+        'Hôm nay không tăng ca: bấm <b>Nghỉ</b>.',
+        'Giờ ra về không có sẵn nút: bấm <b>Khác…</b>, gõ số giờ hoặc giờ ra về (ví dụ <b>9h Tối</b>), rồi bấm <b>Lưu giờ tuỳ chọn</b>.',
+        'Xem tiền tháng ở đầu trang Home (<b>Tiền tháng này</b>). Tổng cả năm nằm ngay bên dưới.',
+        'Quên nhập hôm qua: vào <b>Lịch sử</b>, chạm đúng ngày đó rồi chọn giờ ra về.'
+      ]));
+
+    h += gSec('3. Cách tính tiền', true,
+      '<div class="formula">Số tiền = Số giờ × ' + money + ' / giờ</div>' +
+      '<h4>Số giờ lấy từ đâu?</h4>' +
+      '<p>Với các giờ ra về có sẵn nút, app lấy <b>đúng số giờ trong bảng</b> này (không tính theo công thức):</p>' + table +
+      '<p>Với giờ ra về khác (nhập ở <b>Khác…</b>), app tính từ mốc <b>17h00</b> rồi làm tròn đến 0,5 giờ. Ví dụ <b>9h Tối</b>: 21h − 17h = <b>4 giờ</b> → 4 × ' + money + ' = <b>' + fmtMoney(4 * rate) + '</b>.</p>' +
+      '<p>Bạn cũng có thể gõ thẳng số giờ (từ 0,5 đến 12), app sẽ gợi ý giờ ra về tương ứng. Cả hai ô đều sửa tay được nếu thực tế khác.</p>' +
+      '<h4>Tiền tháng và tiền cả năm</h4>' +
+      '<p><b>Tiền tháng</b> = cộng tiền của tất cả các ngày từ mùng 1 đến cuối tháng dương lịch. <b>Tiền cả năm</b> = cộng 12 tháng. Ngày nghỉ là 0 giờ nên 0 đồng.</p>' + sample +
+      '<div class="note"><b>Lưu ý:</b> giá mỗi giờ là một con số cố định cho mọi ngày, kể cả Chủ nhật và ngày lễ (chưa nhân hệ số). Nếu công ty trả khác thì số trong app sẽ khác phiếu lương. Tiền được lưu tại thời điểm bạn bấm, nên ngày cũ không tự đổi khi sau này đổi giá giờ.</div>' +
+      '<p style="margin-top:10px">Nếu ô <b>Số tiền</b> trong sheet là công thức, app giữ nguyên công thức đó và hiển thị theo kết quả của sheet.</p>');
+
+    h += gSec('4. Ngày nghỉ được nhận biết tự động', false,
+      '<p>App tự nhận ra các ngày sau là ngày nghỉ:</p>' +
+      gList([
+        '<b>Chủ nhật</b>.',
+        '<b>Lễ cố định</b>: 1/1, 30/4, 1/5, 2/9.',
+        '<b>Tết Nguyên Đán</b>: từ 30 (hoặc 29) tháng Chạp đến mùng 4, tự tính theo lịch âm.',
+        '<b>Giỗ Tổ Hùng Vương</b>: 10/3 âm lịch.',
+        '<b>Nghỉ bù</b>: lễ rơi vào Chủ nhật thì nghỉ bù vào ngày làm việc kế tiếp.'
+      ]) +
+      '<p>Các ngày này hiện <b>màu hồng</b>, tự ghi <b>Không sao</b>, và ô ngày trong sheet được tô đỏ.</p>' +
+      '<p><b>Vẫn đi làm vào ngày nghỉ?</b> Cứ bấm giờ ra về như bình thường, ngày đó được tính tiền như ngày thường.</p>' +
+      '<p>Ngày nghỉ riêng của công ty (ngoài các ngày trên) cần khai thêm trong phần <b>EXTRA_HOLIDAYS</b> của Code.</p>');
+
+    h += gSec('5. Từng mục trong app', false,
+      '<h4>Home</h4>' +
+      gList([
+        'Ô đầu là <b>Tiền tháng này</b>, kế đến là số giờ và số ngày làm.',
+        'Thẻ <b>Hôm nay</b>: bấm nút giờ ra về để lưu. Nút đang chọn được tô sáng.',
+        '<b>7 ngày gần đây</b>: chạm vào ngày nào để sửa ngày đó.'
+      ]) +
+      '<h4>Lịch sử</h4>' +
+      gList([
+        'Nút ‹ › đổi tháng. Trên điện thoại, tháng chia 3 cụm 1–10, 11–20, 21–cuối tháng; trên laptop hiện cả tháng.',
+        'Chạm một ngày để mở hộp nhập và sửa.',
+        '<span class="dot" style="background:#ff5c86"></span><b>Hồng</b>: ngày nghỉ. Ngày đã qua mà chưa nhập cũng được xem là nghỉ (0 giờ, 0 đ), nên nếu bạn có đi làm hãy bổ sung.',
+        '<span class="dot" style="background:#a5f3fc"></span><b>Viền sáng nhấp nháy</b>: hôm nay. Ngày <b>mờ</b> là ngày chưa tới.'
+      ]) +
+      '<h4>Biểu đồ</h4>' +
+      gList([
+        'Công tắc <b>Số giờ / Số tiền</b> đổi đơn vị cho mọi biểu đồ.',
+        'Biểu đồ 12 tháng: chạm một cột để chọn tháng, nút ‹ › đổi năm.',
+        'Các ô tóm tắt: tổng của tháng chọn, trung bình mỗi tháng, tháng cao nhất, so với tháng trước.',
+        '<b>Dự báo cuối tháng</b> (chỉ ở tháng hiện tại) = số đã có + số ngày làm còn lại (không tính Chủ nhật, ngày lễ) × số giờ trung bình mỗi ngày bạn đã làm.',
+        'Biểu đồ từng ngày: chạm cột để xem chi tiết. Cột hồng là ngày nghỉ.',
+        '<b>Giờ ra về hay gặp</b>: 5 mốc bạn về nhiều nhất trong năm.'
+      ]));
+
+    h += gSec('6. Sửa hoặc xoá một ngày', false,
+      gSteps([
+        'Chạm vào ngày cần sửa (ở Home hoặc Lịch sử). Hộp nhập hiện ra.',
+        'Chọn lại một nút giờ ra về, hoặc bấm <b>Khác…</b> để nhập giờ riêng.',
+        'Muốn <b>xoá giờ</b> của ngày đó: bấm <b>Nghỉ</b>. Số giờ và tiền của ngày về 0.',
+        'Muốn thoát mà không đổi gì: chạm ra ngoài hộp, hoặc bấm <b>Đóng</b> (laptop: phím <kbd>Esc</kbd>).'
+      ]));
+
+    h += gSec('7. Lưu và đồng bộ với Google Sheet', false,
+      gList([
+        'Bấm là <b>hiện kết quả ngay</b>, việc ghi vào sheet chạy ngầm. Không cần chờ.',
+        '<b>Mất mạng vẫn dùng được</b>: app mở số liệu đã lưu trên máy, bạn vẫn bấm giờ ra về bình thường. Thanh nhỏ ở trên cùng báo số thay đổi đang chờ, và app tự gửi lên sheet khi có mạng lại.',
+        'Nếu ghi vào sheet bị lỗi, app báo <b>Lỗi: …</b> và tự tải lại số liệu thật từ sheet để không bị lệch.',
+        'Bạn vẫn có thể sửa trực tiếp trong sheet. Bấm nút <b>⟳ tải lại</b> để app đọc lại.',
+        'Lịch tự thêm ngày mới để luôn có sẵn khoảng 120 ngày phía trước. Mỗi ngày, ở lần mở app đầu tiên (hoặc lúc 1h sáng nếu đã bật trigger), app tự đánh dấu các ngày nghỉ.'
+      ]));
+
+    h += gSec('8. Câu hỏi thường gặp & phím tắt', false,
+      '<dl class="qa">' +
+      '<dt>Tiền trong app khác với sheet?</dt><dd>Bấm ⟳ để tải lại. Nếu cột Số tiền trong sheet có công thức riêng thì app lấy theo công thức đó.</dd>' +
+      '<dt>Muốn đổi giá mỗi giờ?</dt><dd>Sửa <b>RATE</b> ở đầu Code, rồi Deploy bản mới. Các ngày đã lưu giữ nguyên số tiền cũ.</dd>' +
+      '<dt>Muốn thêm hoặc đổi nút giờ ra về?</dt><dd>Sửa danh sách <b>PRESETS</b> trong Code (mỗi mốc gồm số giờ và chữ giờ ra về).</dd>' +
+      '<dt>Không lưu được?</dt><dd>Kiểm tra mạng, bấm ⟳ rồi thử lại. Nếu vẫn lỗi, kiểm tra tab <b>THỐNG KÊ</b> còn đúng tên và ngày ở cột A.</dd>' +
+      '<dt>Cài app lên màn hình chính?</dt><dd><b>iPhone</b> (Safari): nút Chia sẻ → <b>Thêm vào MH chính</b>. <b>Android</b> (Chrome): menu ⋮ → <b>Cài đặt ứng dụng</b>. <b>Máy tính</b> (Chrome/Edge): biểu tượng cài đặt ở cuối thanh địa chỉ.</dd>' +
+      '<dt>Phím tắt trên laptop</dt><dd><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd> đổi mục · <kbd>←</kbd> <kbd>→</kbd> đổi tháng (Lịch sử) hoặc năm (Biểu đồ) · <kbd>Esc</kbd> đóng hộp nhập.</dd>' +
+      '</dl>');
+
+    box.innerHTML = h;
+    if (was.length) {
+      Array.prototype.forEach.call(box.querySelectorAll('details'), function (d, i) {
+        if (was[i] != null) { d.open = was[i]; d.classList.toggle('on', was[i]); }
+      });
+    }
+  }
+
+  /* ---------- chuyển tab ---------- */
+  function showTab(t) {
+    tab = t;
+    var idx = TABS.indexOf(t);
+    TABS.forEach(function (k) { $('v-' + k).hidden = k !== t; });
+    $('tabbar').style.setProperty('--i', idx);
+    Array.prototype.forEach.call($('tabbar').querySelectorAll('button'), function (b) {
+      b.classList.toggle('on', b.dataset.tab === t);
+    });
+    if (t === 'chart') { ch = { y: Number(DATA.today.slice(0, 4)), m: Number(DATA.today.slice(5, 7)) }; chDay = null; clampChart(); }
+    swap($('v-' + t));
+    render(true);
+    window.scrollTo(0, 0);
+    if (t === 'hist' && !histSeen) {
+      histSeen = true;
+      var row = document.querySelector('#list .row.today');
+      if (row) row.scrollIntoView({ block: 'center' });
+    }
+  }
+  function clampChart() {
+    var a = rows[0].d.slice(0, 7), b = rows[rows.length - 1].d.slice(0, 7), k = monthKey(ch.y, ch.m);
+    if (k < a) k = a;
+    if (k > b) k = b;
+    ch = { y: Number(k.slice(0, 4)), m: Number(k.slice(5)) };
+  }
+
+  /* ---------- khung nhập ---------- */
+  function openSheet(iso) {
+    var r = byIso[iso];
+    if (!r) return;
+    clearTimeout(closeTimer);
+    $('sheet').classList.remove('closing');
+    editIso = iso;
+    $('panel').dataset.iso = iso;
+    $('sheetTitle').textContent = LONG[dow(iso)] + ', ' + dm(iso) + '/' + iso.slice(0, 4);
+    $('sheetPresets').innerHTML = presetsHtml(false, r);
+    $('cH').value = r.h > 0 ? String(r.h).replace('.', ',') : '';
+    $('cRa').value = r.h > 0 ? r.o : '';
+    hDirty = false; raDirty = false;
+    $('sheet').hidden = false;
+  }
+  function closeSheet() {
+    var s = $('sheet');
+    if (s.hidden) return;
+    s.classList.add('closing');
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(function () {
+      s.hidden = true;
+      s.classList.remove('closing');
+      editIso = null;
+    }, 230);
+  }
+
+  /* ---------- lưu tức thì: cập nhật giao diện trước, gửi lên sheet chạy ngầm ---------- */
+  function save(iso, h, ra) {
+    var r = byIso[iso];
+    if (!r) return;
+    var work = h > 0;
+    r.h = work ? h : 0;
+    r.t = work ? h * DATA.rate : 0;
+    r.o = work ? ra : '';
+    r.n = work ? 'GOOD' : 'Không sao';
+    reagg();
+    closeSheet();
+    render();
+    toast('Đã lưu ✓');
+    if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+
+    var tk = seq[iso] = (seq[iso] || 0) + 1;
+    google.script.run
+      .withSuccessHandler(function (rec) {
+        if (seq[iso] !== tk) return;               // đã có lần lưu mới hơn cho ngày này
+        var i = rows.findIndex(function (x) { return x.r === rec.r; });
+        if (i < 0) return;
+        var old = rows[i];
+        rows[i] = rec;
+        byIso[rec.d] = rec;
+        if (old.h !== rec.h || old.t !== rec.t || old.o !== rec.o || old.n !== rec.n) { reagg(); render(); }
+      })
+      .withFailureHandler(function (e) {
+        if (seq[iso] !== tk) return;
+        onFail(e);
+        load(true);                                  // lỗi: tải lại số liệu thật từ sheet
+      })
+      .saveDay(iso, h, ra);
+  }
+
+  function onData(d, quiet) {
+    DATA = d; rows = d.rows; reindex();
+    if (!rows.length) {
+      hideToast();
+      $('list').innerHTML = '<div class="card glass">Không đọc được ngày nào ở tab THỐNG KÊ. Kiểm tra tên tab và cột A.</div>';
+      return;
+    }
+    if (first) {
+      var p = d.today.split('-').map(Number);
+      var k = p[0] + '-' + pad(p[1]);
+      var a = rows[0].d.slice(0, 7), b = rows[rows.length - 1].d.slice(0, 7);
+      if (k < a) k = a;
+      if (k > b) k = b;
+      home = { y: Number(k.slice(0, 4)), m: Number(k.slice(5)) };
+      cur = { y: home.y, m: home.m };
+      part = defaultPart();
+    }
+    render(!quiet);
+    if (!quiet) hideToast();
+    first = false;
+  }
+
+  function load(quiet) {
+    if (!quiet) toast('Đang tải…', true);
+    google.script.run
+      .withSuccessHandler(function (d) { onData(d, quiet); })
+      .withFailureHandler(onFail)
+      .getData();
+  }
+
+  /* ---------- sự kiện ---------- */
+  document.addEventListener('click', function (e) {
+    var sm = e.target.closest('.gd > summary');
+    if (sm) { e.preventDefault(); toggleGuide(sm.parentNode); return; }
+
+    var tb = e.target.closest('[data-tab]');
+    if (tb) { if (tb.dataset.tab !== tab && DATA) showTab(tb.dataset.tab); return; }
+
+    var rl = e.target.closest('.js-reload');
+    if (rl) { rl.classList.remove('spin'); void rl.offsetWidth; rl.classList.add('spin'); load(); return; }
+
+    var sg = e.target.closest('[data-part]');
+    if (sg) { part = Number(sg.dataset.part); render(true); return; }
+
+    var mt = e.target.closest('[data-metric]');
+    if (mt) { metric = mt.dataset.metric; render(); return; }
+
+    var cm = e.target.closest('[data-m]');
+    if (cm) { ch.m = Number(cm.dataset.m); chDay = null; render(); return; }
+
+    var cd = e.target.closest('[data-day]');
+    if (cd) { chDay = chDay === cd.dataset.day ? null : cd.dataset.day; render(); return; }
+
+    var p = e.target.closest('.preset');
+    if (p) {
+      var host = p.closest('[data-iso]');
+      if (!host) return;
+      if (p.dataset.more) { openSheet(host.dataset.iso); return; }
+      save(host.dataset.iso, Number(p.dataset.h), p.dataset.ra);
+      return;
+    }
+    if (e.target === $('sheet')) { closeSheet(); return; }
+    var row = e.target.closest('.row');
+    if (row) openSheet(row.dataset.iso);
+  });
+
+  $('hPrev').onclick = function () {
+    cur.m--; if (cur.m < 1) { cur.m = 12; cur.y--; } part = defaultPart(); render(true);
+  };
+  $('hNext').onclick = function () {
+    cur.m++; if (cur.m > 12) { cur.m = 1; cur.y++; } part = defaultPart(); render(true);
+  };
+  $('cPrev').onclick = function () { ch.y--; chDay = null; clampChart(); render(true); };
+  $('cNext').onclick = function () { ch.y++; chDay = null; clampChart(); render(true); };
+  $('cClose').onclick = closeSheet;
+  $('cSave').onclick = function () {
+    var h = parseFloat(String($('cH').value).replace(',', '.'));
+    var ra = $('cRa').value.trim();
+    if (!(h > 0 && h <= 12)) { toast('Nhập số giờ từ 0,5 đến 12'); return; }
+    if (!ra) { toast('Nhập giờ ra về, ví dụ 9h Tối'); return; }
+    save(editIso, h, ra);
+  };
+
+  /* đổi kích thước cửa sổ giữa điện thoại <-> laptop thì vẽ lại */
+  if (WIDE.addEventListener) WIDE.addEventListener('change', function () { render(); });
+  else if (WIDE.addListener) WIDE.addListener(function () { render(); });
+
+  /* phím tắt cho laptop */
+  document.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var tg = e.target && e.target.tagName;
+    if (e.key === 'Escape') { closeSheet(); return; }
+    if (tg === 'INPUT' || tg === 'TEXTAREA' || !DATA) return;
+    if (!$('sheet').hidden) return;
+    var i = ['1', '2', '3', '4'].indexOf(e.key);
+    if (i >= 0) { if (TABS[i] !== tab) showTab(TABS[i]); return; }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      var back = e.key === 'ArrowLeft';
+      if (tab === 'hist') $(back ? 'hPrev' : 'hNext').click();
+      else if (tab === 'chart') $(back ? 'cPrev' : 'cNext').click();
+    }
+  });
+
+  $('homeStats').innerHTML = statsHtml('home');
+  $('histStats').innerHTML = statsHtml('hist');
+
+  /* auto-calc:start */
+  var START = 17 * 60; // mốc bắt đầu tăng ca: 17h00
+  function parseEnd(s) {
+    var m = /(\d{1,2})\s*(?:h|giờ|:)\s*(\d{1,2})?/i.exec(String(s));
+    if (!m) return null;
+    var h = Number(m[1]), mi = m[2] ? Number(m[2]) : 0;
+    if (mi > 59 || h > 24) return null;
+    if (h < 12 && !/sáng/i.test(s)) h += 12; // "8h30 Tối" -> 20:30
+    return h * 60 + mi;
+  }
+  function fmtEnd(mins) {
+    if (mins >= 24 * 60) return '';
+    var h = Math.floor(mins / 60), mi = mins % 60;
+    return (h > 12 ? h - 12 : h) + 'h' + (mi ? pad(mi) : '') + ' Tối';
+  }
+  function suggestHours(raText) {
+    var t = String(raText).trim().toLowerCase();
+    var p = DATA.presets.find(function (x) { return x.ra.toLowerCase() === t; });
+    if (p) return p.h;
+    var e = parseEnd(raText);
+    if (e == null) return null;
+    var h = (e - START) / 60;
+    if (h <= 0 || h > 12) return null;
+    return Math.round(h * 2) / 2;
+  }
+  function suggestEnd(h) {
+    var p = DATA.presets.find(function (x) { return x.h === h; });
+    if (p) return p.ra;
+    return fmtEnd(START + Math.round(h * 60));
+  }
+  /* auto-calc:end */
+
+  $('cRa').oninput = function () {
+    raDirty = true;
+    if (hDirty) return;
+    var h = suggestHours(this.value);
+    if (h != null) $('cH').value = fmtH(h);
+  };
+  $('cH').oninput = function () {
+    hDirty = true;
+    if (raDirty) return;
+    var h = parseFloat(String(this.value).replace(',', '.'));
+    if (h > 0 && h <= 12) {
+      var e = suggestEnd(h);
+      if (e) $('cRa').value = e;
+    }
+  };
+
+  load();
+})();
+</script>
+</body>
+</html>
