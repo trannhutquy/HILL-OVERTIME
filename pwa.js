@@ -245,5 +245,36 @@
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('sw.js').catch(function (e) { console.warn('SW:', e); });
     });
+
+    /* Tự cập nhật: service worker báo có bản mới thì tải lại trang, nhưng chỉ khi không làm gián đoạn
+       (không đang mở hộp nhập, không đang gõ, không đang gửi dữ liệu). Tối đa 1 lần mỗi phút để không lặp. */
+    var reloaded = false;
+    var safeToReload = function () {
+      var s = $('sheet'), l = $('hillLock'), a = document.activeElement;
+      return (!s || s.hidden) && (!l || l.hidden) && !flushing && !(a && /^(INPUT|TEXTAREA)$/.test(a.tagName));
+    };
+    var applyUpdate = function () {
+      if (reloaded) return;
+      var last = 0;
+      try { last = Number(sessionStorage.getItem('hill.reloadAt') || 0); } catch (e) {}
+      if (Date.now() - last < 60000) return;
+      (function wait() {
+        if (!safeToReload()) { setTimeout(wait, 2500); return; }
+        reloaded = true;
+        try { sessionStorage.setItem('hill.reloadAt', String(Date.now())); } catch (e) {}
+        location.reload();
+      })();
+    };
+    navigator.serviceWorker.addEventListener('message', function (ev) {
+      if (ev.data && ev.data.type === 'HILL_UPDATED') applyUpdate();
+    });
+
+    /* App cài trên điện thoại thường nằm nền rất lâu: mỗi lần quay lại (cách lần kiểm tra trước ≥ 5 phút) hỏi bản mới */
+    var lastCheck = Date.now();
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState !== 'visible' || Date.now() - lastCheck < 300000) return;
+      lastCheck = Date.now();
+      fetch('index.html', { cache: 'no-cache' }).catch(function () {});   // đi qua service worker, nó tự so sánh
+    });
   }
 })();
