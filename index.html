@@ -423,6 +423,29 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 .grow .dt i{transform-origin:0 50%;animation:barRight .9s var(--ease) both}
 @keyframes barRight{from{transform:scaleX(0)}}
 .grow .col .ct{animation:ctIn .5s .35s var(--ease) both}
+/* ---------- thanh trượt chọn số giờ ---------- */
+.slbox{margin-top:12px;padding:14px 16px 8px;border-radius:20px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22)}
+.sl-read{text-align:center}
+.sl-read b{font-size:46px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.sl-read span{font-size:18px;color:var(--ink-2);margin-left:2px}
+.sl-money{text-align:center;font-size:22px;font-weight:700;min-height:28px;color:var(--aqua)}
+.sl-sub{text-align:center;color:var(--ink-2);font-size:14px;margin:2px 0 6px}
+.sl-scale{display:flex;justify-content:space-between;color:var(--ink-3);font-size:12px;padding:0 4px 4px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:40px;padding:0;margin:4px 0 0;border:0;border-radius:0;
+  background:transparent;box-shadow:none;cursor:pointer;touch-action:pan-y}
+input[type=range]:focus{background:transparent;box-shadow:none}
+input[type=range]::-webkit-slider-runnable-track{height:12px;border-radius:99px;
+  background:linear-gradient(90deg,var(--aqua),var(--lilac)) 0 0/var(--p,0%) 100% no-repeat,rgba(255,255,255,.22)}
+input[type=range]::-moz-range-track{height:12px;border-radius:99px;background:rgba(255,255,255,.22)}
+input[type=range]::-moz-range-progress{height:12px;border-radius:99px;background:linear-gradient(90deg,var(--aqua),var(--lilac))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:32px;height:32px;margin-top:-10px;border-radius:50%;border:0;background:#fff;
+  box-shadow:0 2px 14px rgba(0,0,0,.35),0 0 0 5px rgba(165,243,252,.35)}
+input[type=range]::-moz-range-thumb{width:32px;height:32px;border-radius:50%;border:0;background:#fff;
+  box-shadow:0 2px 14px rgba(0,0,0,.35),0 0 0 5px rgba(165,243,252,.35)}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 2px 14px rgba(0,0,0,.35),0 0 0 7px rgba(165,243,252,.6)}
+.primary:disabled{opacity:.45;pointer-events:none}
+/* số nút lẻ thì nút cuối trải đủ 2 cột cho gọn */
+.presets .preset:last-child:nth-child(odd){grid-column:1/-1}
 /* ---------- nút cài app ---------- */
 #hillInstall{display:flex;align-items:center;gap:12px;padding:12px 14px}
 #hillInstall[hidden]{display:none}
@@ -586,12 +609,15 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     <div class="grab"></div>
     <h3 id="sheetTitle"></h3>
     <div class="presets" id="sheetPresets"></div>
-    <div class="custom">
-      <input id="cH" type="text" inputmode="decimal" placeholder="Số giờ, vd 4" aria-label="Số giờ">
-      <input id="cRa" type="text" placeholder="Giờ ra về, vd 9h Tối" aria-label="Giờ ra về">
+    <div class="slbox">
+      <div class="sl-read"><b id="slH">–</b><span id="slU"> giờ</span></div>
+      <div class="sl-money" id="slMoney"></div>
+      <div class="sl-sub" id="slSub">Kéo thanh trượt để chọn số giờ</div>
+      <input type="range" id="cSlide" min="0" max="12" step="0.5" value="0" aria-label="Số giờ tăng ca">
+      <div class="sl-scale"><span>0</span><span>3</span><span>6</span><span>9</span><span>12</span></div>
     </div>
-    <div class="hint">Nhập giờ ra về thì số giờ tự tính (mốc 17h, các giờ có nút bấm lấy đúng theo nút). Nhập số giờ thì giờ ra về tự gợi ý. Sửa lại được nếu khác.</div>
-    <button class="primary" id="cSave">Lưu giờ tuỳ chọn</button>
+    <input type="hidden" id="cH"><input type="hidden" id="cRa">
+    <button class="primary" id="cSave" disabled>Tính Tiền</button>
     <button class="ghost" id="cClose">Đóng</button>
   </div>
 </div>
@@ -696,7 +722,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
         '<b>' + esc(p.ra) + '</b><small>' + fmtH(p.h) + ' giờ · ' + fmtMoney(p.h * DATA.rate) + '</small></button>';
     }).join('');
     html += '<button class="preset off" data-h="0" data-ra=""><b>Nghỉ</b><small>Không tăng ca</small></button>';
-    if (withMore) html += '<button class="preset" data-more="1"><b>Khác…</b><small>Giờ tuỳ chọn</small></button>';
+    if (withMore) html += '<button class="preset" data-more="1"><b>Tính Tiền</b><small>Kéo thanh trượt chọn giờ</small></button>';
     return html;
   }
 
@@ -1056,7 +1082,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
         'Mở app, vào <b>Home</b>. Thẻ <b>Hôm nay</b> nằm ngay đầu trang.',
         'Hết giờ làm, bấm nút <b>giờ ra về</b> đúng với bạn (ví dụ <b>8h30 Tối</b>). Số giờ và tiền hiện ngay, kèm thông báo <b>Đã lưu ✓</b>.',
         'Hôm nay không tăng ca: bấm <b>Nghỉ</b>.',
-        'Giờ ra về không có sẵn nút: bấm <b>Khác…</b>, gõ số giờ hoặc giờ ra về (ví dụ <b>9h Tối</b>), rồi bấm <b>Lưu giờ tuỳ chọn</b>.',
+        'Giờ ra về không có sẵn nút: bấm <b>Tính Tiền</b>, kéo thanh trượt chọn số giờ (mỗi nấc 0,5 giờ). App hiện luôn giờ ra về và số tiền, rồi bấm <b>Tính Tiền</b> để lưu.',
         'Xem tiền tháng ở đầu trang Home (<b>Tiền tháng này</b>). Tổng cả năm nằm ngay bên dưới.',
         'Quên nhập hôm qua: vào <b>Lịch sử</b>, chạm đúng ngày đó rồi chọn giờ ra về.'
       ]));
@@ -1065,8 +1091,8 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
       '<div class="formula">Số tiền = Số giờ × ' + money + ' / giờ</div>' +
       '<h4>Số giờ lấy từ đâu?</h4>' +
       '<p>Với các giờ ra về có sẵn nút, app lấy <b>đúng số giờ trong bảng</b> này (không tính theo công thức):</p>' + table +
-      '<p>Với giờ ra về khác (nhập ở <b>Khác…</b>), app tính từ mốc <b>17h00</b> rồi làm tròn đến 0,5 giờ. Ví dụ <b>9h Tối</b>: 21h − 17h = <b>4 giờ</b> → 4 × ' + money + ' = <b>' + fmtMoney(4 * rate) + '</b>.</p>' +
-      '<p>Bạn cũng có thể gõ thẳng số giờ (từ 0,5 đến 12), app sẽ gợi ý giờ ra về tương ứng. Cả hai ô đều sửa tay được nếu thực tế khác.</p>' +
+      '<p>Với số giờ khác (kéo ở <b>Tính Tiền</b>), mỗi nấc là 0,5 giờ và giờ ra về tính từ mốc <b>17h00</b>. Ví dụ kéo tới <b>4 giờ</b> → ra về <b>9h Tối</b> → 4 × ' + money + ' = <b>' + fmtMoney(4 * rate) + '</b>.</p>' +
+      '<p>Thanh trượt chạy từ 0,5 đến 12 giờ. Số tiền hiện ngay khi bạn kéo.</p>' +
       '<h4>Tiền tháng và tiền cả năm</h4>' +
       '<p><b>Tiền tháng</b> = cộng tiền của tất cả các ngày từ mùng 1 đến cuối tháng dương lịch. <b>Tiền cả năm</b> = cộng 12 tháng. Ngày nghỉ là 0 giờ nên 0 đồng.</p>' + sample +
       '<div class="note"><b>Lưu ý:</b> giá mỗi giờ là một con số cố định cho mọi ngày, kể cả Chủ nhật và ngày lễ (chưa nhân hệ số). Nếu công ty trả khác thì số trong app sẽ khác phiếu lương. Tiền được lưu tại thời điểm bạn bấm, nên ngày cũ không tự đổi khi sau này đổi giá giờ.</div>' +
@@ -1112,7 +1138,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     h += gSec('6. Sửa hoặc xoá một ngày', false,
       gSteps([
         'Chạm vào ngày cần sửa (ở Home hoặc Lịch sử). Hộp nhập hiện ra.',
-        'Chọn lại một nút giờ ra về, hoặc bấm <b>Khác…</b> để nhập giờ riêng.',
+        'Chọn lại một nút giờ ra về, hoặc kéo thanh trượt rồi bấm <b>Tính Tiền</b>.',
         'Muốn <b>xoá giờ</b> của ngày đó: bấm <b>Nghỉ</b>. Số giờ và tiền của ngày về 0.',
         'Muốn thoát mà không đổi gì: chạm ra ngoài hộp, hoặc bấm <b>Đóng</b> (laptop: phím <kbd>Esc</kbd>).'
       ]));
@@ -1181,8 +1207,9 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     $('panel').dataset.iso = iso;
     $('sheetTitle').textContent = LONG[dow(iso)] + ', ' + dm(iso) + '/' + iso.slice(0, 4);
     $('sheetPresets').innerHTML = presetsHtml(false, r);
-    $('cH').value = r.h > 0 ? String(r.h).replace('.', ',') : '';
-    $('cRa').value = r.h > 0 ? r.o : '';
+    $('cSlide').value = r.h > 0 ? r.h : 0;
+    syncSlide(false);
+    if (r.h > 0 && r.o) $('cRa').value = r.o;            // giữ nguyên giờ ra về đã ghi nếu bấm Tính Tiền mà không kéo
     hDirty = false; raDirty = false;
     $('sheet').hidden = false;
   }
@@ -1197,6 +1224,20 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
       editIso = null;
     }, 230);
   }
+
+  /* ---------- thanh trượt chọn số giờ (mỗi nấc 0,5 giờ, mốc 17h00) ---------- */
+  function syncSlide(fromUser) {
+    var s = $('cSlide'), v = Number(s.value), ra = v > 0 ? suggestEnd(v) : '';
+    s.style.setProperty('--p', (v / 12 * 100) + '%');
+    $('slH').textContent = v > 0 ? fmtH(v) : '–';
+    $('slMoney').textContent = v > 0 ? fmtMoney(v * DATA.rate) : '';
+    $('slSub').textContent = v > 0 ? 'Ra về khoảng ' + ra : 'Kéo thanh trượt để chọn số giờ';
+    $('cH').value = v > 0 ? String(v).replace('.', ',') : '';
+    $('cRa').value = ra;
+    $('cSave').disabled = !(v > 0);
+    if (fromUser && navigator.vibrate) { try { navigator.vibrate(4); } catch (e) {} }
+  }
+  $('cSlide').oninput = function () { syncSlide(true); };
 
   /* ---------- phản hồi khi lưu: dòng ngày vừa sửa sáng viền xanh, nút vừa chọn nảy nhẹ ---------- */
   function flashSaved(iso) {
