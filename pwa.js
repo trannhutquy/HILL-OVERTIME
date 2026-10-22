@@ -17,6 +17,10 @@
   function del(k) { try { localStorage.removeItem(k); } catch (e) {} }
   function p2(n) { return String(n).padStart(2, '0'); }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function localIso() {        // ngày theo đồng hồ của máy đang dùng (không phụ thuộc múi giờ của sheet)
+    var n = new Date();
+    return n.getFullYear() + '-' + p2(n.getMonth() + 1) + '-' + p2(n.getDate());
+  }
   function netErr(m) { var e = new Error(m || 'Không có kết nối mạng'); e.net = true; return e; }
 
   /* ---------- màn hình khởi động: tắt khi số liệu đã tải xong (tối thiểu 0,8 giây cho khỏi chớp) ---------- */
@@ -187,14 +191,15 @@
   function getData() {
     return flush().then(function () { return call('getData', {}); }).then(function (j) {
       var d = applyQueue(j.data);
+      d.today = localIso();            // "hôm nay" lấy theo đồng hồ máy, tránh lệch khi múi giờ sheet khác Việt Nam
       set(K.cache, d); setOffline(false);
       return d;
     }, function (e) {
       var c = e && e.net ? get(K.cache) : null;
       if (!c) throw e;
       setOffline(true);
-      var d = clone(c), n = new Date();
-      d.today = n.getFullYear() + '-' + p2(n.getMonth() + 1) + '-' + p2(n.getDate());   // lấy ngày của máy
+      var d = clone(c);
+      d.today = localIso();
       return d;
     });
   }
@@ -354,6 +359,20 @@
     window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; });
     window.addEventListener('appinstalled', function () { bar.hidden = true; del(KEY); });
   })();
+
+  /* ---------- qua nửa đêm: app mở xuyên đêm hoặc nằm nền thì tự cập nhật "hôm nay" ---------- */
+  var lastDay = localIso();
+  function checkDay() {
+    var n = localIso();
+    if (n === lastDay) return;
+    var s = $('sheet');
+    if (s && !s.hidden) return;                       // đang mở hộp nhập thì chờ, không làm gián đoạn
+    lastDay = n;
+    var b = document.querySelector('.js-reload');
+    if (b) b.click();                                 // tải lại như bấm nút ⟳
+  }
+  setInterval(checkDay, 30000);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkDay(); });
 
   /* ---------- khởi động ---------- */
   buildUi();
