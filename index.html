@@ -442,6 +442,11 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 .primary:disabled{opacity:.45;pointer-events:none}
 /* số nút lẻ thì nút cuối trải đủ 2 cột cho gọn */
 .presets .preset:last-child:nth-child(odd){grid-column:1/-1}
+/* ---------- khung phiên bản + nút Cập nhật app ---------- */
+.verbox{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;margin-top:14px}
+.verbox b{display:block;font-size:15px}
+.verbox small{display:block;color:var(--ink-2);font-size:12.5px;margin-top:2px}
+.verbox .ghost{width:auto;margin:0;padding:10px 16px;flex:none}
 /* ---------- nút cài app ---------- */
 #hillInstall{display:flex;align-items:center;gap:12px;padding:12px 14px}
 #hillInstall[hidden]{display:none}
@@ -595,6 +600,10 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
       <div class="month left"><small>Từ A đến Z, gồm cả cách tính tiền</small>Hướng dẫn sử dụng</div>
     </div>
     <div class="guide" id="guide"></div>
+    <div class="card glass verbox">
+      <div><b>Phiên bản app</b><small id="verTxt">v2026.10.22-3</small></div>
+      <button class="ghost" id="btnUpdate">Cập nhật app</button>
+    </div>
   </section>
 </div>
 
@@ -1432,6 +1441,27 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
       else if (tab === 'chart') $(back ? 'cPrev' : 'cNext').click();
     }
   });
+
+  /* Cập nhật app: xoá bản lưu của service worker rồi tải lại. Số liệu, mã truy cập và thay đổi chờ gửi trên máy vẫn giữ nguyên. */
+  $('btnUpdate').onclick = function () {
+    var btn = this, tasks = [];
+    btn.disabled = true; btn.textContent = 'Đang cập nhật…';
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      tasks.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+        return Promise.all(rs.map(function (r) { return r.unregister(); }));
+      }));
+    }
+    if (window.caches) {
+      tasks.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
+    }
+    Promise.all(tasks).catch(function () {}).then(function () {
+      // lấy thẳng bản mới từ GitHub để lần tải lại không dính bộ nhớ đệm của trình duyệt
+      return Promise.all(['./', 'index.html', 'pwa.js', 'config.js', 'manifest.webmanifest'].map(function (u) {
+        return fetch(u, { cache: 'reload' }).catch(function () {});
+      }));
+    }).then(function () { location.reload(); });
+    setTimeout(function () { btn.disabled = false; btn.textContent = 'Cập nhật app'; }, 12000);
+  };
 
   /* vuốt ngang ở tab Lịch sử để đổi tháng (vuốt phải = tháng trước) */
   (function () {
