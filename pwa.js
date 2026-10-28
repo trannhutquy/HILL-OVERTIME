@@ -6,7 +6,8 @@
 (function () {
   'use strict';
   var CFG = window.HILL_CONFIG || {};
-  var K = { token: 'hill.token', cache: 'hill.cache', queue: 'hill.queue' };
+  var K = { token: 'hill.token', cache: 'hill.cache', queue: 'hill.queue',
+            push: 'hill.push', fcmTok: 'hill.fcmTok', pushAt: 'hill.pushAt', pushGio: 'hill.pushGio', notifyHide: 'hill.notifyHide' };
   var TIMEOUT = 30000;
   var offline = !navigator.onLine;
   var gated = false;      // true: đang bị chặn bởi màn hình bắt buộc cài app, chưa được gọi API / hỏi mã
@@ -360,6 +361,159 @@
     window.addEventListener('appinstalled', function () { bar.hidden = true; del(KEY); });
   })();
 
+  /* ---------- thông báo đẩy nhắc nhập giờ (qua Firebase Cloud Messaging) ----------
+     Máy chủ (Apps Script) nhờ Firebase gửi thông báo mỗi tối. Ở đây chỉ lo: lấy "mã thiết bị" từ Firebase,
+     gửi lên máy chủ, gửi thử và tắt. Thư viện Firebase (thư mục vendor) chỉ được tải khi thật sự cần. */
+  (function () {
+    var supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    var homeHost = $('v-home'), anchor = homeHost && homeHost.querySelector('.cols'), guide = $('v-guide');
+    if (gated || !homeHost || !anchor || !guide) return;
+
+    var gio = get(K.pushGio) || '22:45', DAY = 86400000, busy = false, msg = '', vapid = '';
+    var hasSub = !!(get(K.push) && get(K.fcmTok));
+
+    var card = document.createElement('section');
+    card.className = 'card glass'; card.id = 'hillNotify'; card.hidden = true;
+    card.innerHTML = '<div class="tx"><b>Nhắc nhập giờ mỗi tối</b><small id="hillNotifySub"></small></div>' +
+      '<button class="primary" id="hillNotifyGo">Bật</button><button id="hillNotifyX" aria-label="Để sau">×</button>';
+    anchor.parentNode.insertBefore(card, anchor);
+
+    var box = document.createElement('section');
+    box.className = 'card glass verbox'; box.id = 'hillPushBox';
+    box.innerHTML = '<div class="tx"><b>Thông báo nhắc nhập giờ</b><small id="hillPushState"></small></div>' +
+      '<div class="pbtns"><button class="ghost" id="hillPushTest" hidden>Gửi thử</button><button class="ghost" id="hillPushToggle">Bật</button></div>' +
+      '<span id="hillPushMsg" role="status"></span>';
+    guide.insertBefore(box, guide.querySelector('.verbox'));
+
+    function shortUa() {
+      var u = navigator.userAgent;
+      return /iPhone|iPad|iPod/.test(u) ? 'iPhone/iPad' : /Android/.test(u) ? 'Android' : /Windows/.test(u) ? 'Windows' : /Mac/.test(u) ? 'Mac' : 'Khác';
+    }
+    function viMsg(e) {                         // đổi lỗi của Firebase sang tiếng Việt dễ hiểu
+      var c = (e && e.code) || '', m = (e && e.message) || '';
+      if (c === 'messaging/permission-blocked') return 'Bạn đã chặn thông báo.';
+      if (c === 'messaging/unsupported-browser') return 'Trình duyệt này không hỗ trợ thông báo của Firebase.';
+      if (c === 'messaging/token-subscribe-failed') return 'Firebase từ chối đăng ký thiết bị. Kiểm tra khoá API và khoá Web Push trong ThongBao.gs. (' + m.slice(0, 120) + ')';
+      if (c) return 'Lỗi ' + c + (m ? ': ' + m.slice(0, 120) : '');
+      return m || 'Có lỗi, thử lại nhé.';
+    }
+
+    function refresh() {
+      var perm = supported ? Notification.permission : 'unsupported', on = perm === 'granted' && hasSub;
+      var st = $('hillPushState'), tg = $('hillPushToggle'), ts = $('hillPushTest');
+      if (!supported) {
+        st.textContent = 'Máy hoặc trình duyệt này chưa hỗ trợ thông báo đẩy. iPhone: cài app ra màn hình chính (iOS 16.4 trở lên) rồi mở app từ đó.';
+        tg.hidden = true; ts.hidden = true;
+      } else if (perm === 'denied') {
+        st.textContent = 'Bạn đã chặn thông báo. Vào Cài đặt của máy, mục Thông báo của app HILL (hoặc của trình duyệt), bật lại rồi quay lại đây.';
+        tg.hidden = true; ts.hidden = true;
+      } else if (on) {
+        st.textContent = 'Đang bật: nhắc lúc ' + gio + ' mỗi tối nếu bạn chưa nhập giờ hôm đó.';
+        tg.hidden = false; tg.textContent = 'Tắt'; ts.hidden = false;
+      } else {
+        st.textContent = 'Đang tắt. Bật để nhận thông báo nhắc lúc ' + gio + ' mỗi tối.';
+        tg.hidden = false; tg.textContent = 'Bật'; ts.hidden = true;
+      }
+      $('hillPushMsg').textContent = msg;
+      $('hillNotifySub').textContent = msg || 'Thông báo đẩy lúc ' + gio + ' nếu bạn chưa nhập giờ hôm đó.';
+      card.hidden = !supported || perm === 'denied' || on || Date.now() < Number(get(K.notifyHide) || 0);
+      tg.disabled = ts.disabled = busy; $('hillNotifyGo').disabled = busy;
+    }
+
+    function loadScript(src) {
+      return new Promise(function (res, rej) {
+        var s = document.createElement('script');
+        s.src = src; s.onload = res; s.onerror = function () { rej(new Error('Không tải được thư viện thông báo. Kiểm tra mạng rồi thử lại.')); };
+        document.head.appendChild(s);
+      });
+    }
+    function useFirebase(info) {                // tải thư viện (một lần) và trả về đối tượng messaging
+      var ready = (window.firebase && window.firebase.messaging) ? Promise.resolve()
+        : loadScript('vendor/firebase-app-compat.js').then(function () { return loadScript('vendor/firebase-messaging-compat.js'); });
+      return ready.then(function () {
+        var fb = window.firebase;
+        if (!fb.apps.length) fb.initializeApp(info.cfg);
+        if (fb.messaging.isSupported && !fb.messaging.isSupported()) { var e = new Error('x'); e.code = 'messaging/unsupported-browser'; throw e; }
+        vapid = info.vapid;
+        return fb.messaging();
+      });
+    }
+    function fetchToken(m, reg) { return m.getToken({ vapidKey: vapid, serviceWorkerRegistration: reg }); }
+    function getSub() {
+      return navigator.serviceWorker.ready.then(function (reg) { return reg.pushManager.getSubscription().then(function (s) { return { reg: reg, sub: s }; }); });
+    }
+    function register(tok) {
+      set(K.fcmTok, tok); set(K.pushAt, Date.now());
+      return call('pushSubscribe', { fcm: tok, ua: shortUa() });
+    }
+
+    function enable() {                         // gọi requestPermission ngay trong lúc bấm (iOS bắt buộc)
+      var ask = Notification.permission === 'granted' ? Promise.resolve('granted') : Notification.requestPermission();
+      var m = null;
+      return Promise.resolve(ask).then(function (p) {
+        if (p !== 'granted') throw new Error(p === 'denied' ? 'Bạn đã chặn thông báo.' : 'Bạn chưa cho phép thông báo.');
+        return call('pushKey', {});
+      }).then(function (j) {
+        gio = j.gio || gio; set(K.pushGio, gio);
+        return useFirebase(j);
+      }).then(function (x) {
+        m = x; return getSub();
+      }).then(function (o) {                    // đăng ký cũ không do Firebase tạo thì bỏ đi, để Firebase tạo đăng ký đúng khoá
+        return (o.sub && !get(K.fcmTok) ? o.sub.unsubscribe() : Promise.resolve()).then(function () { return fetchToken(m, o.reg); });
+      }).then(function (tok) {
+        if (!tok) throw new Error('Không lấy được mã thiết bị từ Firebase. Thử lại sau.');
+        return register(tok);
+      }).then(function () {
+        hasSub = true; set(K.push, 1); msg = 'Đã bật. Bấm Gửi thử để kiểm tra ngay.';
+      });
+    }
+    function disable() {
+      var tok = get(K.fcmTok);
+      return call('pushKey', {}).then(useFirebase).then(function (m) { return m.deleteToken(); })
+        .then(null, function () { /* huỷ phía Firebase lỗi thì bỏ qua, vẫn gỡ ở máy chủ */ })
+        .then(function () { return tok ? call('pushUnsubscribe', { fcm: tok }) : null; })
+        .then(function () { hasSub = false; del(K.push); del(K.fcmTok); msg = 'Đã tắt nhắc nhở trên máy này.'; });
+    }
+    function test() {
+      var tok = get(K.fcmTok);
+      if (!tok) return Promise.reject(new Error('Máy này chưa đăng ký. Bấm Tắt rồi Bật lại.'));
+      return call('pushTest', { fcm: tok }).then(function (j) {
+        var r = (j.results && j.results[0]) || {};
+        if (r.status >= 200 && r.status < 300) msg = 'Đã gửi (mã ' + r.status + '). Thông báo sẽ hiện sau vài giây.';
+        else if (r.status === 404 || r.body === 'UNREGISTERED') { hasSub = false; del(K.push); del(K.fcmTok); msg = 'Đăng ký đã hết hạn. Bấm Bật lại.'; }
+        else msg = 'Firebase trả lỗi ' + r.status + (r.body ? ' (' + r.body + ')' : '') + '. Chụp dòng này gửi cho người hỗ trợ.';
+      });
+    }
+    function run(fn, startMsg) {
+      if (busy) return;
+      busy = true; msg = startMsg; refresh();
+      fn().then(null, function (e) { msg = viMsg(e); }).then(function () { busy = false; refresh(); });
+    }
+
+    $('hillNotifyGo').onclick = function () { run(enable, 'Đang bật…'); };
+    $('hillNotifyX').onclick = function () { set(K.notifyHide, Date.now() + 3 * DAY); refresh(); };
+    $('hillPushToggle').onclick = function () {
+      if (hasSub && Notification.permission === 'granted') run(disable, 'Đang tắt…'); else run(enable, 'Đang bật…');
+    };
+    $('hillPushTest').onclick = function () { run(test, 'Đang gửi thử…'); };
+
+    /* Mỗi lần mở app: nếu đăng ký bị rơi (iPhone đôi khi vậy) hoặc đã quá 7 ngày thì lấy lại mã thiết bị và báo máy chủ.
+       Còn bình thường thì không tải thư viện Firebase, không tốn mạng. */
+    function resync() {
+      if (!supported || Notification.permission !== 'granted' || !get(K.push) || !get(K.token) || !get(K.fcmTok)) return;
+      getSub().then(function (o) {
+        var dropped = !o.sub, stale = Date.now() - Number(get(K.pushAt) || 0) > 7 * DAY;
+        if (!dropped && !stale) return null;
+        return call('pushKey', {}).then(useFirebase).then(function (m) {
+          return (dropped ? m.deleteToken().then(null, function () {}) : Promise.resolve()).then(function () { return fetchToken(m, o.reg); });
+        }).then(function (tok) { return tok ? register(tok) : null; });
+      }).then(function () { refresh(); }, function () {});
+    }
+
+    refresh();
+    if (supported) setTimeout(resync, 4000);
+  })();
+
   /* ---------- qua nửa đêm: app mở xuyên đêm hoặc nằm nền thì tự cập nhật "hôm nay" ---------- */
   var lastDay = localIso();
   function checkDay() {
@@ -414,10 +568,15 @@
 
     /* App cài trên điện thoại thường nằm nền rất lâu: mỗi lần quay lại (cách lần kiểm tra trước ≥ 5 phút) hỏi bản mới */
     var lastCheck = Date.now();
-    document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState !== 'visible' || Date.now() - lastCheck < 300000) return;
+    function checkUpdate() {
       lastCheck = Date.now();
-      fetch('index.html', { cache: 'no-cache' }).catch(function () {});   // đi qua service worker, nó tự so sánh
+      ['index.html', 'pwa.js', 'config.js'].forEach(function (u) {
+        fetch(u, { cache: 'no-cache' }).catch(function () {});            // đi qua service worker, nó tự so sánh với bản đã lưu
+      });
+    }
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible' && Date.now() - lastCheck >= 300000) checkUpdate();
     });
+    setInterval(checkUpdate, 30 * 60000);                                 // cửa sổ mở suốt cả ngày cũng tự hỏi bản mới
   }
 })();

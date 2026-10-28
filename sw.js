@@ -67,3 +67,25 @@ self.addEventListener('fetch', (e) => {
   if (url.origin === self.location.origin) swr(e, VERSION, e.request.mode === 'navigate' ? 'index.html' : null, true);
   else if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') swr(e, FONTS, null, false);
 });
+
+/* ---------- Thông báo đẩy (Firebase Cloud Messaging) ----------
+   Firebase gửi nội dung bọc trong "data" (tin do máy chủ gửi) hoặc "notification" (tin gửi thử từ trang Firebase). */
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = {}; }
+  const n = d.notification || d.data || d;
+  e.waitUntil(self.registration.showNotification(n.title || 'Nhập giờ tăng ca', {
+    body: n.body || 'Hôm nay bạn ra về lúc mấy giờ? Bấm để nhập nhé.',
+    icon: 'icons/icon-192.png',
+    tag: 'hill-daily',          // nhiều thông báo cùng loại chỉ giữ cái mới nhất
+    data: { url: './' }
+  }));                           // iOS bắt buộc: mỗi lần đẩy phải hiện thông báo
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if ('focus' in c) return c.focus(); }
+    return self.clients.openWindow('./');
+  }));
+});
