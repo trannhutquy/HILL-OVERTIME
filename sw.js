@@ -5,6 +5,7 @@
    - Gọi API Apps Script (POST) không bao giờ bị lưu. Đổi VERSION khi thêm/bớt file trong SHELL. */
 const VERSION = 'hill-v2';
 const FONTS = 'hill-fonts';
+const META = 'hill-meta';          // chỉ chứa 1 mục: thời điểm service worker thấy bản mới (trang đọc để biết mình đang cũ)
 const SHELL = [
   './', 'index.html', 'config.js', 'pwa.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png',
@@ -22,7 +23,7 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION && k !== FONTS).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION && k !== FONTS && k !== META).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -37,6 +38,10 @@ async function changed(oldRes, newRes) {
 }
 
 async function notify() {
+  try {   // ghi dấu bền vững: lúc phát hiện, trang mới có thể chưa kịp tồn tại để nhận tin nhắn
+    const meta = await caches.open(META);
+    await meta.put(new URL('__hill_update__', self.registration.scope).href, new Response(String(Date.now())));
+  } catch (_) {}
   const all = await self.clients.matchAll({ type: 'window' });
   all.forEach((c) => c.postMessage({ type: 'HILL_UPDATED' }));
 }
@@ -44,11 +49,13 @@ async function notify() {
 function swr(e, cacheName, fallbackKey, sameOrigin) {
   e.respondWith(caches.open(cacheName).then(async (cache) => {
     const hit = await cache.match(e.request, { ignoreSearch: true });
+    // Bản sao dùng để so sánh: bản gốc sắp được trả cho trang và bị đọc hết, sau đó không clone/đọc lại được nữa
+    const old = hit ? hit.clone() : null;
     // same-origin: bỏ qua bộ nhớ đệm HTTP (GitHub Pages giữ ~10 phút) để thấy bản mới sớm
     const net = (sameOrigin ? fetch(e.request.url, { cache: 'no-cache' }) : fetch(e.request))
       .then(async (res) => {
         if (res && (res.ok || res.type === 'opaque')) {
-          const isNew = hit && sameOrigin && TEXTY.test(new URL(e.request.url).pathname) && await changed(hit, res);
+          const isNew = old && sameOrigin && TEXTY.test(new URL(e.request.url).pathname) && await changed(old, res);
           try { await cache.put(e.request, res.clone()); } catch (_) {}
           if (isNew) await notify();
         }

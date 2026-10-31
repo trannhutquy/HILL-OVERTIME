@@ -539,32 +539,52 @@
   });
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
   if ('serviceWorker' in navigator) {
+    var swReg = null;
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('sw.js').catch(function (e) { console.warn('SW:', e); });
+      navigator.serviceWorker.register('sw.js').then(function (reg) { swReg = reg; watchSw(reg); }, function (e) { console.warn('SW:', e); });
     });
 
-    /* Tự cập nhật: service worker báo có bản mới thì tải lại trang, nhưng chỉ khi không làm gián đoạn
-       (không đang mở hộp nhập, không đang gõ, không đang gửi dữ liệu). Tối đa 1 lần mỗi phút để không lặp. */
-    var reloaded = false;
-    var safeToReload = function () {
-      var s = $('sheet'), l = $('hillLock'), a = document.activeElement;
-      return (!s || s.hidden) && (!l || l.hidden) && !flushing && !(a && /^(INPUT|TEXTAREA)$/.test(a.tagName));
-    };
-    var applyUpdate = function () {
-      if (reloaded) return;
-      var last = 0;
-      try { last = Number(sessionStorage.getItem('hill.reloadAt') || 0); } catch (e) {}
-      if (Date.now() - last < 60000) return;
-      (function wait() {
-        if (!safeToReload()) { setTimeout(wait, 2500); return; }
-        reloaded = true;
-        try { sessionStorage.setItem('hill.reloadAt', String(Date.now())); } catch (e) {}
-        location.reload();
-      })();
-    };
+    /* Có bản mới: hiện thanh "Cập nhật" chứ không tự tải lại. Service worker đã lưu sẵn bản mới,
+       nên bấm Cập nhật là xong ngay. Bấm × (để sau) thì lần mở app kế tiếp tự là bản mới; nếu cứ để app mở,
+       thanh sẽ nhắc lại khi bạn quay lại app sau hơn 1 giờ. */
+    var pendingUpdate = false, dismissedAt = 0;
+    function showUpdate() {
+      pendingUpdate = true;
+      if ($('hillUpd')) return;
+      var s = $('sheet'), l = $('hillLock');
+      if ((s && !s.hidden) || (l && !l.hidden)) { setTimeout(showUpdate, 2500); return; }     // đang nhập giờ thì chờ, không che nút
+      document.body.insertAdjacentHTML('beforeend',
+        '<div class="glass" id="hillUpd" role="alert"><div class="tx"><b>Có bản mới của app</b>' +
+        '<small>Bấm Cập nhật để dùng bản mới nhất.</small></div>' +
+        '<button class="primary" id="hillUpdGo">Cập nhật</button><button id="hillUpdX" aria-label="Để sau">×</button></div>');
+      $('hillUpdGo').onclick = function () { this.disabled = true; this.textContent = 'Đang cập nhật…'; location.reload(); };
+      $('hillUpdX').onclick = function () {
+        dismissedAt = Date.now();
+        var el = $('hillUpd'); if (el && el.parentNode) el.parentNode.removeChild(el);
+      };
+    }
+    function watchSw(reg) {                    // sw.js đổi: trình duyệt tự cài bản mới, ta chỉ báo cho người dùng
+      reg.addEventListener('updatefound', function () {
+        var w = reg.installing;
+        if (!w) return;
+        w.addEventListener('statechange', function () {
+          if (w.state === 'installed' && navigator.serviceWorker.controller) showUpdate();   // lần cài đầu tiên (chưa có controller) thì không báo
+        });
+      });
+    }
     navigator.serviceWorker.addEventListener('message', function (ev) {
-      if (ev.data && ev.data.type === 'HILL_UPDATED') applyUpdate();
+      if (ev.data && ev.data.type === 'HILL_UPDATED') showUpdate();
     });
+    /* Service worker ghi lại thời điểm nó lưu bản mới. Nếu thời điểm đó muộn hơn lúc trang này bắt đầu tải
+       thì trang đang chạy là bản cũ. (Tin nhắn trực tiếp có thể đến quá sớm khi trang chưa kịp lắng nghe.) */
+    var pageStart = performance.timeOrigin || (Date.now() - performance.now());
+    function checkPending() {
+      if (!window.caches || pendingUpdate) return;
+      caches.open('hill-meta').then(function (c) { return c.match(new URL('__hill_update__', location.href).href); })
+        .then(function (r) { return r ? r.text() : null; })
+        .then(function (t) { if (t && Number(t) > pageStart) showUpdate(); }, function () {});
+    }
+    setTimeout(checkPending, 1500); setTimeout(checkPending, 5000);       // ngay sau khi vào app
 
     /* App cài trên điện thoại thường nằm nền rất lâu: mỗi lần quay lại (cách lần kiểm tra trước ≥ 5 phút) hỏi bản mới */
     var lastCheck = Date.now();
@@ -573,9 +593,14 @@
       ['index.html', 'pwa.js', 'config.js'].forEach(function (u) {
         fetch(u, { cache: 'no-cache' }).catch(function () {});            // đi qua service worker, nó tự so sánh với bản đã lưu
       });
+      if (swReg) swReg.update().catch(function () {});                    // hỏi cả sw.js
+      setTimeout(checkPending, 2000);
     }
     document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'visible' && Date.now() - lastCheck >= 300000) checkUpdate();
+      if (document.visibilityState !== 'visible') return;
+      if (Date.now() - lastCheck >= 300000) checkUpdate();
+      if (pendingUpdate && !$('hillUpd') && Date.now() - dismissedAt > 3600000) showUpdate();
+      else checkPending();   // đã bấm "để sau" thì nhắc lại sau 1 giờ
     });
     setInterval(checkUpdate, 30 * 60000);                                 // cửa sổ mở suốt cả ngày cũng tự hỏi bản mới
   }
