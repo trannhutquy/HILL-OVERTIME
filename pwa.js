@@ -514,6 +514,50 @@
     if (supported) setTimeout(resync, 4000);
   })();
 
+  /* ---------- giao diện: bảng màu có sẵn + thanh chọn tông màu (lưu trên máy này) ---------- */
+  (function () {
+    var T = window.HILL_THEME, guide = $('v-guide');
+    if (!T || !guide) return;
+    var PRESETS = [
+      { n: 'Tím–xanh', t: { m: 'hue', h: 233 } }, { n: 'Xanh biển', t: { m: 'hue', h: 205 } }, { n: 'Xanh lá', t: { m: 'hue', h: 150 } },
+      { n: 'Hồng', t: { m: 'hue', h: 320 } }, { n: 'Hoàng hôn', t: { m: 'hue', h: 20 } }, { n: 'Đen', t: { m: 'black' } }
+    ];
+    var box = document.createElement('section');
+    box.className = 'card glass'; box.id = 'hillThemeBox';
+    box.innerHTML = '<div class="tx"><b>Giao diện</b><small>Chọn màu nền cho app. Màu được nhớ trên máy này.</small></div>' +
+      '<div class="swatches" id="hillSw"></div>' +
+      '<div class="hue"><span>Tông màu</span><input type="range" id="hillHue" min="0" max="359" step="1" aria-label="Tông màu"></div>' +
+      '<button class="ghost" id="hillThemeReset">Về mặc định</button>';
+    guide.insertBefore(box, $('hillPushBox') || guide.querySelector('.verbox'));
+
+    function swStyle(t) {
+      var p = t.m === 'black' ? T.BLACK : T.palette(t.h);
+      return 'linear-gradient(135deg,' + T.hex(p.bg1) + ',' + T.hex(p.bg2) + ' 55%,' + T.hex(p.bg4) + ')';
+    }
+    var sw = $('hillSw');
+    sw.innerHTML = PRESETS.map(function (p, i) {
+      return '<button class="sw" data-i="' + i + '" aria-label="' + p.n + '"><span style="background:' + swStyle(p.t) + '"></span>' + p.n + '</button>';
+    }).join('');
+    function same(a, b) { return a && b && a.m === b.m && (a.m === 'black' || Number(a.h) === Number(b.h)); }
+    function refresh() {
+      var cur = T.get() || { m: 'hue', h: 233 };
+      Array.prototype.forEach.call(sw.children, function (b, i) { b.classList.toggle('on', same(cur, PRESETS[i].t)); });
+      $('hillHue').value = cur.m === 'hue' ? cur.h : 233;
+      $('hillHue').disabled = cur.m === 'black';
+      $('hillThemeReset').hidden = !T.get();
+    }
+    sw.onclick = function (e) {
+      var b = e.target.closest('.sw');
+      if (!b) return;
+      var t = PRESETS[Number(b.dataset.i)].t;
+      T.set(t.m === 'hue' && t.h === 233 ? null : t);          // tím–xanh chính là mặc định
+      refresh();
+    };
+    $('hillHue').oninput = function () { T.set({ m: 'hue', h: Number(this.value) }); refresh(); };
+    $('hillThemeReset').onclick = function () { T.set(null); refresh(); };
+    refresh();
+  })();
+
   /* ---------- qua nửa đêm: app mở xuyên đêm hoặc nằm nền thì tự cập nhật "hôm nay" ---------- */
   var lastDay = localIso();
   function checkDay() {

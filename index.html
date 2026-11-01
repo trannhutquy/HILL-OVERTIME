@@ -4,6 +4,91 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#4c1d95">
+<script>
+/* Giao diện: áp màu người dùng đã chọn NGAY khi mở trang (trước khi vẽ gì) để không bị chớp màu cũ. */
+(function () {
+  var D = 233, W = document.documentElement;
+  var ORIG = { bg1: [52, 16, 127], bg2: [90, 53, 216], bg3: [63, 134, 230], bg4: [79, 182, 236],
+    lilac: [196, 181, 253], aqua: [165, 243, 252], aqua2: [125, 211, 252], night: [30, 27, 75], vio: [139, 124, 246],
+    tint: [26, 12, 86], panel: [30, 16, 100], shade: [24, 10, 80], glass: [58, 36, 150], scrim: [18, 8, 60] };
+  var BLACK = { bg1: [7, 7, 13], bg2: [16, 16, 28], bg3: [24, 24, 38], bg4: [32, 32, 47],
+    lilac: ORIG.lilac, aqua: ORIG.aqua, aqua2: ORIG.aqua2, night: [24, 24, 40], vio: ORIG.vio,
+    tint: [8, 8, 16], panel: [12, 12, 24], shade: [0, 0, 0], glass: [30, 30, 46], scrim: [0, 0, 0] };
+  var VAR = { bg1: '--bg1', bg2: '--bg2', bg3: '--bg3', bg4: '--bg4', lilac: '--lilac', aqua: '--aqua', aqua2: '--aqua-2', night: '--night', vio: '--vio' };
+  var RGB = { lilac: '--lilac-rgb', aqua: '--aqua-rgb', aqua2: '--aqua2-rgb', night: '--night-rgb', tint: '--tint-rgb', panel: '--panel-rgb', shade: '--shade-rgb', glass: '--glass-rgb', scrim: '--scrim-rgb' };
+  var KEYS = Object.keys(ORIG);
+
+  function toHsl(c) {
+    var r = c[0] / 255, g = c[1] / 255, b = c[2] / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, h = 0, s = 0, d = mx - mn;
+    if (d) { s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; }
+    return [h, s * 100, l * 100];
+  }
+  function toRgb(h, s, l) {
+    h = ((h % 360) + 360) % 360; s /= 100; l /= 100;
+    var c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2, r = 0, g = 0, b = 0;
+    if (h < 60) { r = c; g = x; } else if (h < 120) { r = x; g = c; } else if (h < 180) { g = c; b = x; }
+    else if (h < 240) { g = x; b = c; } else if (h < 300) { r = x; b = c; } else { r = c; b = x; }
+    return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+  }
+  function lum(c) {
+    var a = c.map(function (v) { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); });
+    return .2126 * a[0] + .7152 * a[1] + .0722 * a[2];
+  }
+  function ratio(a, b) { var x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); }
+  var HSL = {}, CAP = {};
+  KEYS.forEach(function (k) { HSL[k] = toHsl(ORIG[k]); CAP[k] = lum(ORIG[k]); });
+
+  /* Bảng màu theo "tông giữa" c (233 = tím–xanh hiện tại): xoay màu sắc, giữ nguyên độ đậm nhạt.
+     Các màu nền không được sáng hơn bản gốc, nên chữ trắng luôn đọc được ở mọi tông màu. */
+  function palette(c) {
+    var d = c - D, out = {};
+    KEYS.forEach(function (k) {
+      if (!d) { out[k] = ORIG[k].slice(); return; }
+      var p = HSL[k], l = p[2], rgb = toRgb(p[0] + d, p[1], l);
+      if (/^bg/.test(k)) { while (lum(rgb) > CAP[k] && l > 6) { l -= 1; rgb = toRgb(p[0] + d, p[1], l); } }
+      out[k] = rgb;
+    });
+    ['lilac', 'aqua', 'aqua2'].forEach(function (k) {      // chữ tối trên nút sáng phải đọc rõ (tối thiểu 7:1): màu sáng nhạt thêm nếu cần
+      var p = HSL[k], l = p[2], rgb = out[k];
+      while (d && ratio(out.night, rgb) < 7 && l < 97) { l += 1; rgb = toRgb(p[0] + d, p[1], l); }
+      out[k] = rgb;
+    });
+    return out;
+  }
+  function hex(c) { return '#' + c.map(function (v) { return ('0' + v.toString(16)).slice(-2); }).join(''); }
+  function setMeta(c) { var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', c || '#4c1d95'); }
+  function valid(t) { return t && (t.m === 'black' || (t.m === 'hue' && isFinite(Number(t.h)))); }
+
+  function apply(t) {
+    if (!valid(t)) {
+      KEYS.forEach(function (k) { if (VAR[k]) W.style.removeProperty(VAR[k]); if (RGB[k]) W.style.removeProperty(RGB[k]); });
+      W.style.removeProperty('--orb-o'); setMeta(null); return;
+    }
+    var p = t.m === 'black' ? BLACK : palette(Number(t.h));
+    KEYS.forEach(function (k) {
+      if (VAR[k]) W.style.setProperty(VAR[k], hex(p[k]));
+      if (RGB[k]) W.style.setProperty(RGB[k], p[k].join(','));
+    });
+    W.style.setProperty('--orb-o', t.m === 'black' ? '.28' : '1');     // nền đen: đốm sáng mờ đi cho dịu và đỡ tốn pin
+    setMeta(hex(p.bg1));
+  }
+
+  var cur = null;
+  try { cur = JSON.parse(localStorage.getItem('hill.theme')); } catch (e) {}
+  if (!valid(cur)) cur = null;
+  apply(cur);
+
+  window.HILL_THEME = {
+    apply: apply, palette: palette, hex: hex, BLACK: BLACK, valid: valid,
+    get: function () { return cur; },
+    set: function (t) {
+      cur = valid(t) ? t : null;
+      try { if (cur) localStorage.setItem('hill.theme', JSON.stringify(cur)); else localStorage.removeItem('hill.theme'); } catch (e) {}
+      apply(cur);
+    }
+  };
+})();
+</script>
 <meta name="description" content="Theo dõi giờ và tiền tăng ca">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,7 +104,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --tint:rgba(26,12,86,.38);
+  --tint:rgba(var(--tint-rgb),.38);
   --ink:#fff;
   --ink-2:rgba(255,255,255,.82);
   --ink-3:rgba(255,255,255,.64);
@@ -28,11 +113,15 @@
   --aqua-2:#7dd3fc;
   --lilac:#c4b5fd;
   --night:#1e1b4b;
+  /* bảng màu theo chủ đề: mặc định là tím–xanh; script ở đầu trang ghi đè khi người dùng chọn màu khác */
+  --bg1:#34107f;--bg2:#5a35d8;--bg3:#3f86e6;--bg4:#4fb6ec;--vio:#8b7cf6;
+  --aqua-rgb:165,243,252;--aqua2-rgb:125,211,252;--lilac-rgb:196,181,253;--night-rgb:30,27,75;
+  --tint-rgb:26,12,86;--panel-rgb:30,16,100;--shade-rgb:24,10,80;--glass-rgb:58,36,150;--scrim-rgb:18,8,60;--orb-o:1;
   --ease:cubic-bezier(.22,1,.36,1);
   --spring:cubic-bezier(.2,.9,.3,1.25);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{background:#34107f}
+html{background:var(--bg1)}
 body{margin:0;min-height:100vh;color:var(--ink);
   font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   font-size:15px;line-height:1.4;font-variant-numeric:tabular-nums;
@@ -41,16 +130,16 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* ---------- nền gradient tím → xanh nước + các đốm sáng trôi chậm ---------- */
 .bg{position:fixed;inset:0;z-index:-1;overflow:hidden;
-  background:linear-gradient(165deg,#34107f 0%,#5a35d8 40%,#3f86e6 76%,#4fb6ec 100%)}
-.orb{position:absolute;border-radius:50%;will-change:transform}
+  background:linear-gradient(165deg,var(--bg1) 0%,var(--bg2) 40%,var(--bg3) 76%,var(--bg4) 100%)}
+.orb{position:absolute;border-radius:50%;will-change:transform;opacity:var(--orb-o)}
 .o1{width:80vmax;height:80vmax;left:-30vmax;top:-30vmax;
-  background:radial-gradient(circle,rgba(196,181,253,.85),rgba(124,58,237,0) 62%);
+  background:radial-gradient(circle,rgba(var(--lilac-rgb),.85),rgba(var(--lilac-rgb),0) 62%);
   animation:drift1 24s ease-in-out infinite alternate}
 .o2{width:70vmax;height:70vmax;right:-30vmax;top:22vh;
-  background:radial-gradient(circle,rgba(125,211,252,.8),rgba(56,189,248,0) 62%);
+  background:radial-gradient(circle,rgba(var(--aqua2-rgb),.8),rgba(var(--aqua2-rgb),0) 62%);
   animation:drift2 28s ease-in-out infinite alternate}
 .o3{width:64vmax;height:64vmax;left:-14vmax;bottom:-34vmax;
-  background:radial-gradient(circle,rgba(165,243,252,.65),rgba(34,211,238,0) 62%);
+  background:radial-gradient(circle,rgba(var(--aqua-rgb),.65),rgba(var(--aqua-rgb),0) 62%);
   animation:drift3 32s ease-in-out infinite alternate}
 @keyframes drift1{to{transform:translate3d(22vmax,14vmax,0) scale(1.15)}}
 @keyframes drift2{to{transform:translate3d(-20vmax,-12vmax,0) scale(1.1)}}
@@ -68,10 +157,10 @@ button{font:inherit;color:inherit;cursor:pointer}
   box-shadow:
     inset 0 1px 1px rgba(255,255,255,.55),
     inset 0 -1px 1px rgba(255,255,255,.1),
-    0 12px 30px rgba(24,10,80,.34);
+    0 12px 30px rgba(var(--shade-rgb),.34);
 }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .glass{background:rgba(58,36,150,.88)}
+  .glass{background:rgba(var(--glass-rgb),.88)}
 }
 
 .wrap{position:relative;max-width:640px;margin:0 auto;
@@ -80,7 +169,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* ---------- thanh tháng ---------- */
 .bar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .month{flex:1;text-align:center;font-weight:700;font-size:20px;letter-spacing:-.01em;
-  text-shadow:0 2px 14px rgba(24,10,80,.35)}
+  text-shadow:0 2px 14px rgba(var(--shade-rgb),.35)}
 .month.left{text-align:left;padding-left:4px}
 .month.left small{display:block;font-size:12.5px;font-weight:500;color:var(--ink-3);text-shadow:none}
 .swap{animation:swap .45s var(--ease) both}
@@ -100,7 +189,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .stat small{display:block;color:var(--ink-3);font-size:12.5px;font-weight:500}
 .stat span{display:block;font-weight:700;font-size:24px;letter-spacing:-.01em}
 .stat.money span{font-size:34px;font-weight:800;letter-spacing:-.03em;
-  text-shadow:0 2px 22px rgba(165,243,252,.5)}
+  text-shadow:0 2px 22px rgba(var(--aqua-rgb),.5)}
 @keyframes rise{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
 .year{display:inline-flex;align-items:center;margin:12px 2px 14px;padding:7px 14px;
   border-radius:999px;font-size:12.5px;color:var(--ink-2)}
@@ -125,8 +214,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .preset b{display:block;font-size:17px;font-weight:700}
 .preset small{color:var(--ink-2);font-size:12.5px}
 .preset.off b{color:#fecdd3}
-.preset.sel{background:linear-gradient(135deg,rgba(196,181,253,.5),rgba(125,211,252,.5));
-  border-color:rgba(255,255,255,.65);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 22px rgba(125,211,252,.4)}
+.preset.sel{background:linear-gradient(135deg,rgba(var(--lilac-rgb),.5),rgba(var(--aqua2-rgb),.5));
+  border-color:rgba(255,255,255,.65);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 22px rgba(var(--aqua2-rgb),.4)}
 .preset:active{transform:scale(.94)}
 @media (hover:hover){.preset:hover{background:rgba(255,255,255,.2);transform:translateY(-2px)}}
 
@@ -134,8 +223,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .seg{display:grid;grid-template-columns:repeat(3,1fr);padding:5px;border-radius:24px;margin-bottom:14px}
 .seg.two{grid-template-columns:1fr 1fr}
 .seg .thumb{position:absolute;top:5px;bottom:5px;left:5px;width:calc((100% - 10px) / 3);border-radius:19px;
-  background:linear-gradient(135deg,rgba(196,181,253,.9),rgba(125,211,252,.92));
-  box-shadow:0 6px 20px rgba(125,211,252,.4),inset 0 1px 0 rgba(255,255,255,.75);
+  background:linear-gradient(135deg,rgba(var(--lilac-rgb),.9),rgba(var(--aqua2-rgb),.92));
+  box-shadow:0 6px 20px rgba(var(--aqua2-rgb),.4),inset 0 1px 0 rgba(255,255,255,.75);
   transform:translateX(calc(var(--i) * 100%));
   transition:transform .55s var(--spring)}
 .seg.two .thumb{width:calc((100% - 10px) / 2)}
@@ -144,7 +233,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .seg button b{display:block;font-weight:700}
 .seg button small{display:block;font-weight:500;font-size:11.5px;color:var(--ink-3);transition:color .3s}
 .seg button.on{color:var(--night)}
-.seg button.on small{color:rgba(30,27,75,.75)}
+.seg button.on small{color:rgba(var(--night-rgb),.75)}
 
 /* ---------- danh sách ngày ---------- */
 .row{display:flex;align-items:center;gap:12px;border-radius:22px;padding:10px 14px;margin-bottom:10px;
@@ -163,9 +252,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .row.rest .date small{color:rgba(255,255,255,.92)}
 .row.rest .ra{color:#ffe1e9;font-size:17px;font-weight:700}
 .row.today::after{content:'';position:absolute;inset:-2px;border-radius:24px;pointer-events:none;
-  border:2px solid rgba(165,243,252,.95);animation:glow 2.6s ease-in-out infinite}
-@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(125,211,252,0);opacity:.8}
-  50%{box-shadow:0 0 22px 2px rgba(125,211,252,.55);opacity:1}}
+  border:2px solid rgba(var(--aqua-rgb),.95);animation:glow 2.6s ease-in-out infinite}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(var(--aqua2-rgb),0);opacity:.8}
+  50%{box-shadow:0 0 22px 2px rgba(var(--aqua2-rgb),.55);opacity:1}}
 .date{flex:none;width:48px;height:48px;border-radius:50%;display:grid;place-content:center;text-align:center;
   line-height:1.05;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.26)}
 .date b{font-size:18px;font-weight:700}
@@ -173,7 +262,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .mid{flex:1;min-width:0}
 .ra{font-weight:600;margin-bottom:2px}
 .tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:600;
-  background:rgba(165,243,252,.2);color:#d9f9ff;border:1px solid rgba(165,243,252,.42)}
+  background:rgba(var(--aqua-rgb),.2);color:#d9f9ff;border:1px solid rgba(var(--aqua-rgb),.42)}
 .tag.muted{background:rgba(255,255,255,.1);color:var(--ink-3);border-color:rgba(255,255,255,.18);font-weight:500}
 .tag.off{background:#ffd9e2;color:#7f1238;border-color:transparent}
 .right{text-align:right}
@@ -190,7 +279,7 @@ svg.chart{display:block;width:100%;height:auto;overflow:visible}
 .ct.hi{fill:#fff;font-weight:700}
 .col{cursor:pointer}
 .col .bar{transition:opacity .25s,filter .25s}
-.col.sel .bar{filter:drop-shadow(0 0 7px rgba(165,243,252,.75))}
+.col.sel .bar{filter:drop-shadow(0 0 7px rgba(var(--aqua-rgb),.75))}
 .cap{min-height:21px;margin:4px 6px 2px;color:var(--ink-2);font-size:13px}
 .chips{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .chip{border-radius:22px;padding:12px 14px}
@@ -213,8 +302,8 @@ svg.chart{display:block;width:100%;height:auto;overflow:visible}
   width:min(calc(100% - 28px),440px);display:grid;grid-template-columns:repeat(4,1fr);
   padding:6px;border-radius:30px}
 .tabbar .thumb{position:absolute;top:6px;bottom:6px;left:6px;width:calc((100% - 12px) / 4);border-radius:24px;
-  background:linear-gradient(135deg,rgba(196,181,253,.92),rgba(125,211,252,.94));
-  box-shadow:0 6px 20px rgba(125,211,252,.4),inset 0 1px 0 rgba(255,255,255,.75);
+  background:linear-gradient(135deg,rgba(var(--lilac-rgb),.92),rgba(var(--aqua2-rgb),.94));
+  box-shadow:0 6px 20px rgba(var(--aqua2-rgb),.4),inset 0 1px 0 rgba(255,255,255,.75);
   transform:translateX(calc(var(--i) * 100%));
   transition:transform .55s var(--spring)}
 .tabbar button{position:relative;z-index:1;background:none;border:0;padding:9px 4px 8px;border-radius:24px;
@@ -226,11 +315,11 @@ svg.chart{display:block;width:100%;height:auto;overflow:visible}
 
 /* ---------- khung nhập (bottom sheet) ---------- */
 .sheet{position:fixed;inset:0;z-index:10;display:flex;align-items:flex-end;justify-content:center;
-  background:rgba(18,8,60,.5);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  background:rgba(var(--scrim-rgb),.5);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
   animation:fade .3s ease both}
 .sheet[hidden]{display:none}
 .sheet.closing{animation:fadeOut .22s ease both}
-.panel{--tint:rgba(30,16,100,.66);width:100%;max-width:640px;border-radius:32px 32px 0 0;border-bottom:0;
+.panel{--tint:rgba(var(--panel-rgb),.66);width:100%;max-width:640px;border-radius:32px 32px 0 0;border-bottom:0;
   padding:12px 16px calc(18px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto;
   animation:sheetUp .55s var(--ease) both}
 .sheet.closing .panel{animation:sheetDown .22s ease-in both}
@@ -245,13 +334,13 @@ input{width:100%;padding:13px 14px;border-radius:16px;font:inherit;font-size:16p
   background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);
   transition:border-color .2s,box-shadow .2s,background .2s}
 input::placeholder{color:rgba(255,255,255,.55)}
-input:focus{border-color:var(--aqua);background:rgba(255,255,255,.18);box-shadow:0 0 0 4px rgba(165,243,252,.22)}
+input:focus{border-color:var(--aqua);background:rgba(255,255,255,.18);box-shadow:0 0 0 4px rgba(var(--aqua-rgb),.22)}
 .hint{color:var(--ink-3);font-size:12.5px;margin-top:10px}
 .primary,.ghost{width:100%;margin-top:10px;padding:14px;border-radius:18px;font-weight:700;
   transition:transform .3s var(--spring),box-shadow .25s}
 .primary{border:0;color:var(--night);
   background:linear-gradient(135deg,var(--lilac),var(--aqua-2));
-  box-shadow:0 10px 26px rgba(125,211,252,.4),inset 0 1px 0 rgba(255,255,255,.75)}
+  box-shadow:0 10px 26px rgba(var(--aqua2-rgb),.4),inset 0 1px 0 rgba(255,255,255,.75)}
 .ghost{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3)}
 .primary:active,.ghost:active{transform:scale(.96)}
 :focus-visible{outline:3px solid var(--aqua);outline-offset:2px}
@@ -323,7 +412,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     padding-top:calc(28px + env(safe-area-inset-top))}
   .brand{display:block;padding:4px 12px 2px}
   .brand b{display:block;font-size:26px;font-weight:800;letter-spacing:-.03em;
-    text-shadow:0 2px 18px rgba(165,243,252,.45)}
+    text-shadow:0 2px 18px rgba(var(--aqua-rgb),.45)}
   .brand small{display:block;color:var(--ink-3);font-size:13px;font-weight:500}
   .tabbar{--bh:56px;position:relative;left:auto;bottom:auto;transform:none;width:auto;
     display:flex;flex-direction:column;padding:8px;border-radius:28px;z-index:1}
@@ -394,11 +483,11 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 /* ---------- màn hình khởi động (hiện trong lúc tải số liệu) ---------- */
 #splash{position:fixed;inset:0;z-index:25;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
   padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
-  background:linear-gradient(165deg,#34107f 0%,#5a35d8 40%,#3f86e6 76%,#4fb6ec 100%);
+  background:linear-gradient(165deg,var(--bg1) 0%,var(--bg2) 40%,var(--bg3) 76%,var(--bg4) 100%);
   transition:opacity .45s ease,visibility .45s;animation:splashAuto .5s 20s forwards}
 #splash.out{opacity:0;visibility:hidden;pointer-events:none}
 #splash img{width:92px;height:auto;margin-bottom:14px;animation:hillSpin 2.6s cubic-bezier(.45,.05,.3,1) infinite}
-#splash b{font-size:24px;font-weight:800;letter-spacing:-.02em;text-shadow:0 2px 18px rgba(165,243,252,.45);
+#splash b{font-size:24px;font-weight:800;letter-spacing:-.02em;text-shadow:0 2px 18px rgba(var(--aqua-rgb),.45);
   animation:hillIn .7s var(--ease) both}
 #splash small{color:var(--ink-2);font-size:13.5px;animation:hillIn .7s .15s var(--ease) both}
 @keyframes hillSpin{to{transform:rotate(360deg)}}
@@ -426,13 +515,13 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 /* ---------- thanh trượt "Tính Tiền": trượt sang phải để lưu ---------- */
 .slide{position:relative;height:58px;margin-top:10px;border-radius:18px;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(135deg,var(--lilac),var(--aqua-2));
-  box-shadow:0 10px 26px rgba(125,211,252,.4),inset 0 1px 0 rgba(255,255,255,.75);
+  box-shadow:0 10px 26px rgba(var(--aqua2-rgb),.4),inset 0 1px 0 rgba(255,255,255,.75);
   overflow:hidden;user-select:none;-webkit-user-select:none}
 .slide .sl-label{font-weight:800;font-size:16px;color:var(--night);pointer-events:none;padding-left:34px;transition:opacity .12s}
-.slide .sl-hint{position:absolute;right:18px;font-weight:800;font-size:20px;letter-spacing:-3px;color:rgba(30,27,75,.5);
+.slide .sl-hint{position:absolute;right:18px;font-weight:800;font-size:20px;letter-spacing:-3px;color:rgba(var(--night-rgb),.5);
   pointer-events:none;animation:slHint 1.5s ease-in-out infinite}
 .slide .sl-knob{position:absolute;left:5px;top:5px;width:48px;height:48px;border-radius:14px;background:var(--night);color:#fff;
-  display:grid;place-items:center;cursor:grab;touch-action:none;will-change:transform;box-shadow:0 4px 14px rgba(30,27,75,.45)}
+  display:grid;place-items:center;cursor:grab;touch-action:none;will-change:transform;box-shadow:0 4px 14px rgba(var(--night-rgb),.45)}
 .slide.snap .sl-knob{transition:transform .35s var(--ease)}
 .slide.drag .sl-knob{cursor:grabbing}
 .slide.nudge .sl-knob{animation:slNudge .6s var(--ease)}
@@ -442,6 +531,26 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 .primary:disabled{opacity:.45;pointer-events:none}
 /* số nút lẻ thì nút cuối trải đủ 2 cột cho gọn */
 .presets .preset:last-child:nth-child(odd){grid-column:1/-1}
+/* ---------- khung chọn giao diện ---------- */
+#hillThemeBox{display:block;padding:14px 16px;margin-top:14px}
+#hillThemeBox .tx b{display:block;font-size:15px}
+#hillThemeBox .tx small{display:block;color:var(--ink-2);font-size:12.5px;margin-top:2px}
+.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:12px 0 8px}
+.sw{background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--ink-2);font-size:11px;line-height:1.1}
+.sw span{display:block;width:100%;aspect-ratio:1;border-radius:14px;border:2px solid rgba(255,255,255,.3);transition:transform .25s var(--spring),box-shadow .25s}
+.sw:active span{transform:scale(.92)}
+.sw.on{color:#fff;font-weight:700}
+.sw.on span{border-color:#fff;box-shadow:0 0 0 3px rgba(var(--aqua-rgb),.55)}
+.hue{display:flex;align-items:center;gap:12px;margin:10px 0 4px}
+.hue span{flex:none;color:var(--ink-2);font-size:13px}
+#hillHue{-webkit-appearance:none;appearance:none;flex:1;height:36px;padding:0;margin:0;border:0;border-radius:0;background:transparent;box-shadow:none;cursor:pointer;touch-action:pan-y}
+#hillHue:focus{background:transparent;box-shadow:none}
+#hillHue::-webkit-slider-runnable-track{height:12px;border-radius:99px;background:linear-gradient(90deg,hsl(0,75%,55%),hsl(60,75%,50%),hsl(120,65%,45%),hsl(180,70%,45%),hsl(240,75%,60%),hsl(300,70%,55%),hsl(360,75%,55%))}
+#hillHue::-moz-range-track{height:12px;border-radius:99px;background:linear-gradient(90deg,hsl(0,75%,55%),hsl(60,75%,50%),hsl(120,65%,45%),hsl(180,70%,45%),hsl(240,75%,60%),hsl(300,70%,55%),hsl(360,75%,55%))}
+#hillHue::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;margin-top:-9px;border-radius:50%;border:0;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+#hillHue::-moz-range-thumb{width:30px;height:30px;border-radius:50%;border:0;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+#hillThemeReset{width:auto;margin:6px 0 0;padding:9px 16px}
+#hillHue:disabled{opacity:.35;cursor:default}
 /* ---------- thanh "Có bản mới của app" ---------- */
 #hillUpd{position:fixed;z-index:22;left:12px;right:12px;bottom:calc(92px + env(safe-area-inset-bottom));max-width:420px;margin:0 auto;
   display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;animation:updIn .5s var(--ease) both}
@@ -483,7 +592,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 #hillHow{z-index:20}
 /* ---------- màn hình bắt buộc cài app (điện thoại, trước khi nhập mã) ---------- */
 #hillGate{position:fixed;inset:0;z-index:40;display:flex;overflow-y:auto;-webkit-overflow-scrolling:touch;
-  background:linear-gradient(165deg,#34107f 0%,#5a35d8 40%,#3f86e6 76%,#4fb6ec 100%)}
+  background:linear-gradient(165deg,var(--bg1) 0%,var(--bg2) 40%,var(--bg3) 76%,var(--bg4) 100%)}
 #hillGate .gw{margin:auto;width:100%;max-width:420px;text-align:center;
   padding:calc(28px + env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom))}
 #hillGate img{width:84px;height:auto;margin-bottom:12px}
@@ -625,7 +734,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     </div>
     <div class="guide" id="guide"></div>
     <div class="card glass verbox">
-      <div><b>Phiên bản app</b><small id="verTxt">v2026.10.29-1</small></div>
+      <div><b>Phiên bản app</b><small id="verTxt">v2026.10.30-1</small></div>
       <button class="ghost" id="btnUpdate">Cập nhật app</button>
     </div>
   </section>
@@ -870,7 +979,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
   /* ---------- biểu đồ ---------- */
   var DEFS = function (id) {
     return '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1">' +
-      '<stop offset="0" stop-color="#a5f3fc"/><stop offset="1" stop-color="#8b7cf6"/></linearGradient></defs>';
+      '<stop offset="0" style="stop-color:var(--aqua)"/><stop offset="1" style="stop-color:var(--vio)"/></linearGradient></defs>';
   };
   function val(a) { return metric === 'h' ? a.h : a.t; }
   function fmtVal(v) {
@@ -1153,7 +1262,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
         'Nút ‹ › đổi tháng. Trên điện thoại, tháng chia 3 cụm 1–10, 11–20, 21–cuối tháng; trên laptop hiện cả tháng.',
         'Chạm một ngày để mở hộp nhập và sửa.',
         '<span class="dot" style="background:#ff5c86"></span><b>Hồng</b>: ngày nghỉ. Ngày đã qua mà chưa nhập cũng được xem là nghỉ (0 giờ, 0 đ), nên nếu bạn có đi làm hãy bổ sung.',
-        '<span class="dot" style="background:#a5f3fc"></span><b>Viền sáng nhấp nháy</b>: hôm nay. Ngày <b>mờ</b> là ngày chưa tới.'
+        '<span class="dot" style="background:var(--aqua)"></span><b>Viền sáng nhấp nháy</b>: hôm nay. Ngày <b>mờ</b> là ngày chưa tới.'
       ]) +
       '<h4>Biểu đồ</h4>' +
       gList([
