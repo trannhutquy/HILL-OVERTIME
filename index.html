@@ -531,6 +531,23 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 .primary:disabled{opacity:.45;pointer-events:none}
 /* số nút lẻ thì nút cuối trải đủ 2 cột cho gọn */
 .presets .preset:last-child:nth-child(odd){grid-column:1/-1}
+/* ---------- Chủ nhật có đi làm: màu vàng cam riêng ---------- */
+.year[hidden]{display:none}
+.year.sunpill{color:#fde68a;border-color:rgba(253,224,71,.45)}
+.row.sun{--tint:rgba(146,84,6,.58);border-color:rgba(253,224,71,.6);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.5),inset 0 -1px 1px rgba(255,255,255,.1),0 10px 28px rgba(217,119,6,.38)}
+.row.sun::before{content:'';position:absolute;left:0;top:12px;bottom:12px;width:5px;border-radius:0 5px 5px 0;
+  background:linear-gradient(#fef08a,#f59e0b);box-shadow:0 0 14px rgba(245,158,11,.85)}
+.row.sun .date{background:linear-gradient(135deg,#fbbf24,#d97706);border-color:rgba(255,255,255,.65);box-shadow:0 4px 14px rgba(217,119,6,.5)}
+.row.sun .date small{color:rgba(255,255,255,.95)}
+.row.sun .ra{color:#fef3c7;font-weight:700}
+.row.sun .right b{color:#fde68a}
+.tag.sun{background:#fde68a;color:#78350f;border-color:transparent}
+.preset.sunp{border-color:rgba(253,224,71,.55)}
+.preset.sunp b{color:#fde68a}
+.panel.sun .custom,.panel.sun .slide,.panel.sun .hint{display:none}
+.panel.sun #sunHint{display:block}
+#sunHint[hidden]{display:none}
 /* ---------- khung chọn giao diện ---------- */
 #hillThemeBox{display:block;padding:14px 16px;margin-top:14px}
 #hillThemeBox .tx b{display:block;font-size:15px}
@@ -655,6 +672,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
       <div class="cl">
         <div class="stats" id="homeStats"></div>
         <div class="year glass" id="homeYear"></div>
+        <div class="year glass sunpill" id="homeSun" hidden></div>
         <section class="card glass" id="todayCard" hidden>
           <h2 id="todayTitle"></h2>
           <div class="status" id="todayStatus"></div>
@@ -680,6 +698,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
       <div class="cl stick">
         <div class="stats" id="histStats"></div>
         <div class="year glass" id="histYear"></div>
+        <div class="year glass sunpill" id="histSun" hidden></div>
         <div class="seg glass" id="seg" style="--i:0">
           <span class="thumb"></span>
           <button data-part="0"></button>
@@ -734,7 +753,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     </div>
     <div class="guide" id="guide"></div>
     <div class="card glass verbox">
-      <div><b>Phiên bản app</b><small id="verTxt">v2026.10.30-1</small></div>
+      <div><b>Phiên bản app</b><small id="verTxt">v2026.11.01-1</small></div>
       <button class="ghost" id="btnUpdate">Cập nhật app</button>
     </div>
   </section>
@@ -747,6 +766,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     <div class="grab"></div>
     <h3 id="sheetTitle"></h3>
     <div class="presets" id="sheetPresets"></div>
+    <div class="hint" id="sunHint" hidden></div>
     <div class="custom">
       <input id="cH" type="text" inputmode="decimal" placeholder="Số giờ, vd 4" aria-label="Số giờ">
       <input id="cRa" type="text" placeholder="Giờ ra về, vd 9h Tối" aria-label="Giờ ra về">
@@ -795,6 +815,10 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     return new Date(p[0], p[1] - 1, p[2]).getDay();
   };
   var dm = function (iso) { return iso.slice(8) + '/' + iso.slice(5, 7); };
+  /* Chủ nhật mặc định là ngày nghỉ. Nếu có đi làm thì chỉ có 2 lựa chọn cố định dưới đây
+     (tiền vẫn tính theo công thức cũ: số giờ × giá giờ). Muốn đổi số giờ thì sửa ở đây. */
+  var SUN = [{ ra: 'Nửa ngày', h: 5.5 }, { ra: 'Một ngày', h: 11 }];
+  var isSun = function (iso) { return dow(iso) === 0; };
   var monthKey = function (y, m) { return y + '-' + pad(m); };
 
   /* số chạy mượt từ giá trị cũ sang giá trị mới */
@@ -835,11 +859,11 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
   function reagg() {
     agg = {};
     rows.forEach(function (r) {
-      var k = r.d.slice(0, 7), a = agg[k] || (agg[k] = { h: 0, t: 0, n: 0 });
-      if (r.h > 0) { a.h += r.h; a.t += r.t; a.n++; }
+      var k = r.d.slice(0, 7), a = agg[k] || (agg[k] = { h: 0, t: 0, n: 0, sh: 0, st: 0, sn: 0 });
+      if (r.h > 0) { a.h += r.h; a.t += r.t; a.n++; if (isSun(r.d)) { a.sh += r.h; a.st += r.t; a.sn++; } }   // sh/st/sn: phần Chủ nhật, đã nằm trong tổng
     });
   }
-  function aggOf(k) { return agg[k] || { h: 0, t: 0, n: 0 }; }
+  function aggOf(k) { return agg[k] || { h: 0, t: 0, n: 0, sh: 0, st: 0, sn: 0 }; }
   function yearAgg(y) {
     var s = { h: 0, t: 0, n: 0 };
     for (var m = 1; m <= 12; m++) {
@@ -855,13 +879,14 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
   }
 
   function presetsHtml(withMore, rec) {
-    var html = DATA.presets.map(function (p) {
+    var sunday = !!(rec && isSun(rec.d));
+    var html = (sunday ? SUN : DATA.presets).map(function (p) {
       var sel = rec && rec.h > 0 && rec.h === p.h ? ' sel' : '';
-      return '<button class="preset' + sel + '" data-h="' + p.h + '" data-ra="' + esc(p.ra) + '">' +
+      return '<button class="preset' + (sunday ? ' sunp' : '') + sel + '" data-h="' + p.h + '" data-ra="' + esc(p.ra) + '">' +
         '<b>' + esc(p.ra) + '</b><small>' + fmtH(p.h) + ' giờ · ' + fmtMoney(p.h * DATA.rate) + '</small></button>';
     }).join('');
     html += '<button class="preset off" data-h="0" data-ra=""><b>Nghỉ</b><small>Không tăng ca</small></button>';
-    if (withMore) html += '<button class="preset" data-more="1"><b>Khác…</b><small>Giờ tuỳ chọn</small></button>';
+    if (withMore && !sunday) html += '<button class="preset" data-more="1"><b>Khác…</b><small>Giờ tuỳ chọn</small></button>';
     return html;
   }
 
@@ -876,6 +901,8 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     setNum($(p + 'Hours'), a.h, fmtH);
     setNum($(p + 'Days'), a.n, fmtInt);
     $(p + 'Year').textContent = 'Cả năm ' + y + ': ' + fmtH(ya.h) + ' giờ · ' + fmtMoney(ya.t);
+    var sp = $(p + 'Sun');                                   // phần Chủ nhật đã nằm trong tổng tháng; ghi riêng cho dễ thấy
+    if (sp) { sp.hidden = !a.sn; if (a.sn) sp.textContent = 'Chủ nhật: ' + a.sn + ' ngày · ' + fmtH(a.sh) + ' giờ · ' + fmtMoney(a.st); }
   }
 
   /* ---------- vẽ từng màn hình ---------- */
@@ -945,8 +972,11 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     card.hidden = false;
     card.dataset.iso = t.d;
     $('todayTitle').textContent = 'Hôm nay · ' + LONG[dow(t.d)] + ', ' + dm(t.d);
+    var sunDay = isSun(t.d);
     $('todayStatus').textContent = t.h > 0
-      ? 'Đã nhập: ' + fmtH(t.h) + ' giờ · ra về ' + t.o + ' · ' + fmtMoney(t.t)
+      ? (sunDay ? 'Chủ nhật đã nhập: ' + t.o + ' · ' + fmtH(t.h) + ' giờ · ' + fmtMoney(t.t)
+                : 'Đã nhập: ' + fmtH(t.h) + ' giờ · ra về ' + t.o + ' · ' + fmtMoney(t.t))
+      : sunDay ? 'Hôm nay là Chủ nhật, mặc định nghỉ. Có đi làm thì chọn Nửa ngày hoặc Một ngày.'
       : t.x ? 'Hôm nay nghỉ: ' + t.x + '. Có làm thì bấm giờ ra về bên dưới.'
       : 'Chưa có tăng ca hôm nay';
     $('todayStatus').className = 'status' + (t.h > 0 ? ' ok' : '');
@@ -959,11 +989,12 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
       var w = dow(r.d);
       var future = r.d > DATA.today;
       var rest = r.h === 0 && (!!r.x || r.red || w === 0 || r.d < DATA.today);
-      var cls = 'row glass' + (rest ? ' rest' : '') + (future ? ' future' : '') +
+      var sunWork = w === 0 && r.h > 0;                       // Chủ nhật có đi làm: màu vàng cam riêng
+      var cls = 'row glass' + (rest ? ' rest' : '') + (sunWork ? ' sun' : '') + (future ? ' future' : '') +
         (r.d === DATA.today ? ' today' : '');
       var why = r.x || (w === 0 ? 'Chủ nhật' : r.red ? 'Ngày lễ' : (r.n || 'Không sao'));
       var mid = r.h > 0
-        ? '<div class="ra">' + esc(r.o) + '</div>' + (r.n ? '<span class="tag">' + esc(r.n) + '</span>' : '')
+        ? '<div class="ra">' + esc(r.o) + '</div>' + (sunWork ? '<span class="tag sun">Chủ nhật</span>' : r.n ? '<span class="tag">' + esc(r.n) + '</span>' : '')
         : rest
           ? '<div class="ra">Nghỉ</div><span class="tag off">' + esc(why) + '</span>'
           : '<span class="tag muted">' + (future ? 'Chưa tới' : 'Chưa nhập') + '</span>';
@@ -977,9 +1008,9 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
   }
 
   /* ---------- biểu đồ ---------- */
-  var DEFS = function (id) {
+  var DEFS = function (id, c1, c2) {
     return '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1">' +
-      '<stop offset="0" style="stop-color:var(--aqua)"/><stop offset="1" style="stop-color:var(--vio)"/></linearGradient></defs>';
+      '<stop offset="0" style="stop-color:' + (c1 || 'var(--aqua)') + '"/><stop offset="1" style="stop-color:' + (c2 || 'var(--vio)') + '"/></linearGradient></defs>';
   };
   function val(a) { return metric === 'h' ? a.h : a.t; }
   function fmtVal(v) {
@@ -1018,13 +1049,13 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     var slot = (W - L - R) / n, bw = Math.min(slot * 0.62, 22), ph = H - T - B, mx = 0;
     mr.forEach(function (r) { var v = metric === 'h' ? r.h : r.t; if (v > mx) mx = v; });
     mx = mx || 1;
-    var s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Biểu đồ theo ngày">' + DEFS('gB') +
+    var s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Biểu đồ theo ngày">' + DEFS('gB') + DEFS('gS', '#fde68a', '#f59e0b') +
       '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + (H - B) + '" y2="' + (H - B) + '" stroke="rgba(255,255,255,.25)"/>';
     mr.forEach(function (r, i) {
       var v = metric === 'h' ? r.h : r.t, w = dow(r.d), d = dayOf(r);
       var rest = r.h === 0 && (r.x || w === 0), fut = r.d > DATA.today, sel = r.d === chDay;
       var x0 = L + slot * i, x = x0 + (slot - bw) / 2, h = v > 0 ? Math.max(4, ph * v / mx) : 3, y = H - B - h;
-      var fill = v > 0 ? 'url(#gB)' : rest ? '#ff7aa2' : 'rgba(255,255,255,.35)';
+      var fill = v > 0 ? (w === 0 ? 'url(#gS)' : 'url(#gB)') : rest ? '#ff7aa2' : 'rgba(255,255,255,.35)';
       var op = fut ? 0.3 : v > 0 ? (sel ? 1 : 0.85) : 0.6;
       s += '<g class="col' + (sel ? ' sel' : '') + '" data-day="' + r.d + '">' +
         '<rect x="' + x0 + '" y="0" width="' + slot + '" height="' + H + '" fill="transparent"/>' +
@@ -1063,7 +1094,8 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     if (key === todayKey && a.n > 0) {
       var mr = rows.filter(function (r) { return r.d.indexOf(key) === 0; });
       var rem = mr.filter(function (r) { return r.h === 0 && r.d >= DATA.today && !r.x && dow(r.d) !== 0; }).length;
-      var projH = a.h + rem * (a.h / a.n), projT = a.h > 0 ? a.t + rem * (a.h / a.n) * (a.t / a.h) : 0;
+      var nN = a.n - a.sn, nH = a.h - a.sh, nT = a.t - a.st;   // trung bình tính trên ngày thường; Chủ nhật đã đi làm cộng nguyên số thật
+      var projH = a.h + (nN ? rem * (nH / nN) : 0), projT = a.t + (nN ? rem * (nT / nN) : 0);
       out += chipHtml('Dự báo cuối tháng (còn ' + rem + ' ngày làm)', fmtFull(metric === 'h' ? projH : projT), 'wide');
     }
     return out;
@@ -1086,9 +1118,12 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 
   function dayCaption() {
     var r = chDay && byIso[chDay];
-    if (!r) return 'Chạm vào cột để xem chi tiết từng ngày';
+    if (!r) {
+      var mk = monthKey(ch.y, ch.m);
+      return 'Chạm vào cột để xem chi tiết từng ngày' + (aggOf(mk).sn ? ' · Cột vàng cam = Chủ nhật có đi làm' : '');
+    }
     var head = LONG[dow(r.d)] + ', ' + dm(r.d) + ': ';
-    return head + (r.h > 0 ? fmtH(r.h) + ' giờ · ' + fmtMoney(r.t) + ' · ra về ' + r.o : (r.x ? 'Nghỉ (' + r.x + ')' : 'Không tăng ca'));
+    return head + (r.h > 0 ? (isSun(r.d) ? r.o + ' (Chủ nhật) · ' + fmtH(r.h) + ' giờ · ' + fmtMoney(r.t) : fmtH(r.h) + ' giờ · ' + fmtMoney(r.t) + ' · ra về ' + r.o) : (r.x ? 'Nghỉ (' + r.x + ')' : 'Không tăng ca'));
   }
 
   function renderChart(animate) {
@@ -1346,6 +1381,11 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     $('panel').dataset.iso = iso;
     $('sheetTitle').textContent = LONG[dow(iso)] + ', ' + dm(iso) + '/' + iso.slice(0, 4);
     $('sheetPresets').innerHTML = presetsHtml(false, r);
+    var sun = isSun(iso);
+    $('panel').classList.toggle('sun', sun);
+    $('sunHint').hidden = !sun;
+    if (sun) $('sunHint').textContent = 'Chủ nhật mặc định là ngày nghỉ. Có đi làm thì chọn ' +
+      SUN.map(function (s) { return s.ra + ' (' + fmtH(s.h) + ' giờ)'; }).join(' hoặc ') + '.';
     $('cH').value = r.h > 0 ? String(r.h).replace('.', ',') : '';
     $('cRa').value = r.h > 0 ? r.o : '';
     hDirty = false; raDirty = false;
