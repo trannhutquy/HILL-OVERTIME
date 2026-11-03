@@ -357,38 +357,7 @@ input:focus{border-color:var(--aqua);background:rgba(255,255,255,.18);box-shadow
     transition-duration:.01ms!important}
 }
 
-/* ---------- hướng dẫn sử dụng ---------- */
-.gd{border-radius:24px;margin-bottom:12px;overflow:hidden}
-.gd summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;
-  gap:12px;padding:16px 18px;font-weight:700;font-size:16.5px}
-.gd summary::-webkit-details-marker{display:none}
-.gd summary i{flex:none;width:9px;height:9px;border-right:2.4px solid var(--ink-2);border-bottom:2.4px solid var(--ink-2);
-  transform:rotate(45deg) translate(-2px,-2px);transition:transform .35s var(--spring)}
-.gd.on summary i{transform:rotate(225deg) translate(-2px,-2px)}
-.gd summary{-webkit-user-select:none;user-select:none}
-.gb{padding:0 18px 18px;color:var(--ink-2);font-size:14.5px;line-height:1.65}
-.gb p{margin:0 0 10px}
-.gb b{color:#fff;font-weight:700}
-.gb h4{margin:16px 0 6px;font-size:14.5px;font-weight:700;color:#fff}
-.gb ul{margin:0 0 10px;padding-left:20px}
-.gb li{margin-bottom:5px}
-.steps{list-style:none;margin:0;padding:0;counter-reset:s}
-.steps li{counter-increment:s;display:flex;gap:12px;margin:0 0 12px;padding:0}
-.steps li::before{content:counter(s);flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
-  font-weight:700;font-size:13px;color:var(--night);background:linear-gradient(135deg,var(--lilac),var(--aqua-2))}
-.formula{margin:4px 0 12px;padding:14px 16px;border-radius:18px;text-align:center;font-weight:800;font-size:17px;
-  color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3)}
-.ptable{margin:6px 0 12px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.22)}
-.ptable div{display:grid;grid-template-columns:1.1fr 1fr 1.2fr;gap:8px;padding:9px 14px;font-size:14px}
-.ptable div:nth-child(even){background:rgba(255,255,255,.08)}
-.ptable .th{font-size:12px;color:var(--ink-3);font-weight:600;background:rgba(255,255,255,.04)!important}
-.ptable span:last-child{text-align:right}
-.note{margin:12px 0 0;padding:12px 14px;border-radius:16px;background:rgba(255,92,134,.2);
-  border:1px solid rgba(255,170,195,.5);color:#ffe9ef}
-.note b{color:#fff}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:baseline}
-.qa dt{font-weight:700;color:#fff;margin-top:12px}
-.qa dd{margin:2px 0 0}
+/* ---------- phím tắt ---------- */
 kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-align:center;
   font:600 11.5px/20px "Be Vietnam Pro",system-ui,sans-serif;background:rgba(255,255,255,.14);
   border:1px solid rgba(255,255,255,.3);color:var(--ink-2)}
@@ -463,9 +432,6 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
   .sheet.closing .panel{animation:modalOut .2s ease-in both}
   .grab{display:none}
   .toast{bottom:32px}
-  .guide{max-width:860px}
-  .gd summary{font-size:17px}
-  .gb{font-size:15px}
 }
 @media (min-width:1024px) and (hover:hover){
   .row:hover{transform:translateY(-2px)}
@@ -647,8 +613,8 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
       Biểu đồ
     </button>
     <button data-tab="guide">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.1-2.4 3.8"/><path d="M12 17.2h.01"/></svg>
-      Hướng dẫn
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Cài đặt
     </button>
   </nav>
 
@@ -746,14 +712,13 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     </div>
   </section>
 
-  <!-- ===================== HƯỚNG DẪN ===================== -->
+  <!-- ===================== CÀI ĐẶT ===================== -->
   <section class="view" id="v-guide" hidden>
     <div class="bar">
-      <div class="month left"><small>Từ A đến Z, gồm cả cách tính tiền</small>Hướng dẫn sử dụng</div>
+      <div class="month left"><small>Giao diện · Thông báo · Cập nhật</small>Cài đặt</div>
     </div>
-    <div class="guide" id="guide"></div>
     <div class="card glass verbox">
-      <div><b>Phiên bản app</b><small id="verTxt">v2026.11.01-1</small></div>
+      <div><b>Cập nhật</b><small id="verTxt">v2026.11.01-1</small></div>
       <button class="ghost" id="btnUpdate">Cập nhật app</button>
     </div>
   </section>
@@ -912,7 +877,6 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     if (tab === 'home') renderHome(animate);
     else if (tab === 'hist') renderHist(animate);
     else if (tab === 'chart') renderChart(animate);
-    else renderGuide();
   }
 
   function fillSide() {
@@ -1152,198 +1116,6 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     }
   }
 
-
-  /* ---------- hướng dẫn sử dụng (số liệu lấy từ cấu hình thật của app) ---------- */
-  var guideKey = '';
-  function gSec(title, open, inner) {
-    return '<details class="gd glass' + (open ? ' on' : '') + '"' + (open ? ' open' : '') + '><summary><span>' + title +
-      '</span><i aria-hidden="true"></i></summary><div class="gb">' + inner + '</div></details>';
-  }
-  function gSteps(list) {
-    return '<ol class="steps">' + list.map(function (t) { return '<li><span>' + t + '</span></li>'; }).join('') + '</ol>';
-  }
-  function gList(list) {
-    return '<ul>' + list.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>';
-  }
-
-  /* ---------- hiệu ứng sổ xuống nhẹ nhàng: khung giãn ra, chữ lần lượt hiện theo ---------- */
-  var EASE_OUT = 'cubic-bezier(.22,1,.36,1)', EASE_IO = 'cubic-bezier(.4,0,.2,1)';
-  function toggleGuide(d) {
-    var body = d.querySelector('.gb');
-    if (!body) return;
-    var curH = body.getBoundingClientRect().height;          // chiều cao đang hiển thị (kể cả giữa chừng)
-    (d._a || []).forEach(function (a) { try { a.cancel(); } catch (e) {} });
-    d._a = [];
-    body.style.overflow = '';
-    var tok = d._tok = (d._tok || 0) + 1;
-    var opening = !d.classList.contains('on');
-
-    if (REDUCED || !body.animate) { d.open = opening; d.classList.toggle('on', opening); return; }
-    d.classList.toggle('on', opening);
-
-    if (opening) {
-      var wasClosed = !d.open;
-      d.open = true;
-      var full = body.offsetHeight;
-      var pad = parseFloat(getComputedStyle(body).paddingBottom) || 0;
-      var start = wasClosed ? 0 : Math.min(curH, full);
-      body.style.overflow = 'hidden';
-      var a = body.animate(
-        [{ height: start + 'px', paddingBottom: (start ? pad : 0) + 'px' },
-         { height: full + 'px', paddingBottom: pad + 'px' }],
-        { duration: 560, easing: EASE_OUT });
-      var done = function () { if (d._tok === tok) { body.style.overflow = ''; } };
-      a.onfinish = done; a.oncancel = done;
-      d._a.push(a);
-      if (wasClosed) {
-        var items = [];
-        Array.prototype.forEach.call(body.children, function (c) {
-          if (/^(UL|OL|DL)$/.test(c.tagName)) Array.prototype.forEach.call(c.children, function (x) { items.push(x); });
-          else items.push(c);
-        });
-        items.forEach(function (el, i) {
-          d._a.push(el.animate(
-            [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }],
-            { duration: 460, delay: 110 + Math.min(i, 14) * 45, easing: EASE_OUT, fill: 'backwards' }));
-        });
-      }
-    } else {
-      var padC = parseFloat(getComputedStyle(body).paddingBottom) || 0;
-      body.style.overflow = 'hidden';
-      var c = body.animate(
-        [{ height: curH + 'px', paddingBottom: padC + 'px', opacity: 1 },
-         { height: '0px', paddingBottom: '0px', opacity: 0 }],
-        { duration: 380, easing: EASE_IO, fill: 'forwards' });
-      c.onfinish = function () {
-        if (d._tok !== tok) return;
-        d.open = false;
-        body.style.overflow = '';
-        c.cancel();
-      };
-      d._a.push(c);
-    }
-  }
-
-  function renderGuide() {
-    var box = $('guide');
-    var a = aggOf(monthKey(home.y, home.m));
-    var key = JSON.stringify([DATA.rate, DATA.presets, a.h, a.t]);
-    if (key === guideKey) return;
-    var was = Array.prototype.map.call(box.querySelectorAll('details'), function (d) { return d.open; });
-    guideKey = key;
-
-    var rate = DATA.rate, money = fmtMoney(rate);
-    var table = '<div class="ptable"><div class="th"><span>Giờ ra về</span><span>Số giờ</span><span>Số tiền</span></div>' +
-      DATA.presets.map(function (p) {
-        return '<div><span><b>' + esc(p.ra) + '</b></span><span>' + fmtH(p.h) + ' giờ</span><span>' + fmtMoney(p.h * rate) + '</span></div>';
-      }).join('') + '</div>';
-    var sample = (a.h > 0 && Math.round(a.h * rate) === Math.round(a.t))
-      ? '<p>Ví dụ tháng ' + pad(home.m) + ' của bạn: <b>' + fmtH(a.h) + ' giờ × ' + money + ' = ' + fmtMoney(a.t) + '</b>.</p>' : '';
-
-    var h = '';
-
-    h += gSec('1. App này dùng để làm gì?', true,
-      '<p>Ghi lại giờ tăng ca mỗi ngày, <b>tự tính tiền</b> và lưu thẳng vào Google Trang tính (tab <b>THỐNG KÊ</b>). Bạn chỉ cần bấm, không phải mở sheet.</p>' +
-      gList([
-        '<b>Home</b>: tiền và giờ của tháng này, nhập giờ cho hôm nay, xem 7 ngày gần đây.',
-        '<b>Lịch sử</b>: xem lại và sửa bất kỳ ngày nào, theo từng tháng.',
-        '<b>Biểu đồ</b>: so sánh các tháng, từng ngày trong tháng, dự báo cuối tháng.',
-        '<b>Hướng dẫn</b>: chính trang này.'
-      ]));
-
-    h += gSec('2. Cách dùng mỗi ngày (từng bước)', true,
-      gSteps([
-        'Mở app, vào <b>Home</b>. Thẻ <b>Hôm nay</b> nằm ngay đầu trang.',
-        'Hết giờ làm, bấm nút <b>giờ ra về</b> đúng với bạn (ví dụ <b>8h30 Tối</b>). Số giờ và tiền hiện ngay, kèm thông báo <b>Đã lưu ✓</b>.',
-        'Hôm nay không tăng ca: bấm <b>Nghỉ</b>.',
-        'Giờ ra về không có sẵn nút: bấm <b>Khác…</b>, gõ số giờ hoặc giờ ra về (ví dụ <b>9h Tối</b>), rồi <b>trượt nút Tính Tiền sang phải</b> để lưu.',
-        'Xem tiền tháng ở đầu trang Home (<b>Tiền tháng này</b>). Tổng cả năm nằm ngay bên dưới.',
-        'Quên nhập hôm qua: vào <b>Lịch sử</b>, chạm đúng ngày đó rồi chọn giờ ra về.'
-      ]));
-
-    h += gSec('3. Cách tính tiền', true,
-      '<div class="formula">Số tiền = Số giờ × ' + money + ' / giờ</div>' +
-      '<h4>Số giờ lấy từ đâu?</h4>' +
-      '<p>Với các giờ ra về có sẵn nút, app lấy <b>đúng số giờ trong bảng</b> này (không tính theo công thức):</p>' + table +
-      '<p>Với giờ ra về khác (nhập ở <b>Khác…</b>), app tính từ mốc <b>17h00</b> rồi làm tròn đến 0,5 giờ. Ví dụ <b>9h Tối</b>: 21h − 17h = <b>4 giờ</b> → 4 × ' + money + ' = <b>' + fmtMoney(4 * rate) + '</b>.</p>' +
-      '<p>Bạn cũng có thể gõ thẳng số giờ (từ 0,5 đến 12), app sẽ gợi ý giờ ra về tương ứng. Cả hai ô đều sửa tay được nếu thực tế khác.</p>' +
-      '<h4>Tiền tháng và tiền cả năm</h4>' +
-      '<p><b>Tiền tháng</b> = cộng tiền của tất cả các ngày từ mùng 1 đến cuối tháng dương lịch. <b>Tiền cả năm</b> = cộng 12 tháng. Ngày nghỉ là 0 giờ nên 0 đồng.</p>' + sample +
-      '<div class="note"><b>Lưu ý:</b> giá mỗi giờ là một con số cố định cho mọi ngày, kể cả Chủ nhật và ngày lễ (chưa nhân hệ số). Nếu công ty trả khác thì số trong app sẽ khác phiếu lương. Tiền được lưu tại thời điểm bạn bấm, nên ngày cũ không tự đổi khi sau này đổi giá giờ.</div>' +
-      '<p style="margin-top:10px">Nếu ô <b>Số tiền</b> trong sheet là công thức, app giữ nguyên công thức đó và hiển thị theo kết quả của sheet.</p>');
-
-    h += gSec('4. Ngày nghỉ được nhận biết tự động', false,
-      '<p>App tự nhận ra các ngày sau là ngày nghỉ:</p>' +
-      gList([
-        '<b>Chủ nhật</b>.',
-        '<b>Lễ cố định</b>: 1/1, 30/4, 1/5, 2/9.',
-        '<b>Tết Nguyên Đán</b>: từ 30 (hoặc 29) tháng Chạp đến mùng 4, tự tính theo lịch âm.',
-        '<b>Giỗ Tổ Hùng Vương</b>: 10/3 âm lịch.',
-        '<b>Nghỉ bù</b>: lễ rơi vào Chủ nhật thì nghỉ bù vào ngày làm việc kế tiếp.'
-      ]) +
-      '<p>Các ngày này hiện <b>màu hồng</b>, tự ghi <b>Không sao</b>, và ô ngày trong sheet được tô đỏ.</p>' +
-      '<p><b>Vẫn đi làm vào ngày nghỉ?</b> Cứ bấm giờ ra về như bình thường, ngày đó được tính tiền như ngày thường.</p>' +
-      '<p>Ngày nghỉ riêng của công ty (ngoài các ngày trên) cần khai thêm trong phần <b>EXTRA_HOLIDAYS</b> của Code.</p>');
-
-    h += gSec('5. Từng mục trong app', false,
-      '<h4>Home</h4>' +
-      gList([
-        'Ô đầu là <b>Tiền tháng này</b>, kế đến là số giờ và số ngày làm.',
-        'Thẻ <b>Hôm nay</b>: bấm nút giờ ra về để lưu. Nút đang chọn được tô sáng.',
-        '<b>7 ngày gần đây</b>: chạm vào ngày nào để sửa ngày đó.'
-      ]) +
-      '<h4>Lịch sử</h4>' +
-      gList([
-        'Nút ‹ › đổi tháng. Trên điện thoại, tháng chia 3 cụm 1–10, 11–20, 21–cuối tháng; trên laptop hiện cả tháng.',
-        'Chạm một ngày để mở hộp nhập và sửa.',
-        '<span class="dot" style="background:#ff5c86"></span><b>Hồng</b>: ngày nghỉ. Ngày đã qua mà chưa nhập cũng được xem là nghỉ (0 giờ, 0 đ), nên nếu bạn có đi làm hãy bổ sung.',
-        '<span class="dot" style="background:var(--aqua)"></span><b>Viền sáng nhấp nháy</b>: hôm nay. Ngày <b>mờ</b> là ngày chưa tới.'
-      ]) +
-      '<h4>Biểu đồ</h4>' +
-      gList([
-        'Công tắc <b>Số giờ / Số tiền</b> đổi đơn vị cho mọi biểu đồ.',
-        'Biểu đồ 12 tháng: chạm một cột để chọn tháng, nút ‹ › đổi năm.',
-        'Các ô tóm tắt: tổng của tháng chọn, trung bình mỗi tháng, tháng cao nhất, so với tháng trước.',
-        '<b>Dự báo cuối tháng</b> (chỉ ở tháng hiện tại) = số đã có + số ngày làm còn lại (không tính Chủ nhật, ngày lễ) × số giờ trung bình mỗi ngày bạn đã làm.',
-        'Biểu đồ từng ngày: chạm cột để xem chi tiết. Cột hồng là ngày nghỉ.',
-        '<b>Giờ ra về hay gặp</b>: 5 mốc bạn về nhiều nhất trong năm.'
-      ]));
-
-    h += gSec('6. Sửa hoặc xoá một ngày', false,
-      gSteps([
-        'Chạm vào ngày cần sửa (ở Home hoặc Lịch sử). Hộp nhập hiện ra.',
-        'Chọn lại một nút giờ ra về, hoặc gõ giờ riêng rồi <b>trượt nút Tính Tiền sang phải</b>.',
-        'Muốn <b>xoá giờ</b> của ngày đó: bấm <b>Nghỉ</b>. Số giờ và tiền của ngày về 0.',
-        'Muốn thoát mà không đổi gì: chạm ra ngoài hộp, hoặc bấm <b>Đóng</b> (laptop: phím <kbd>Esc</kbd>).'
-      ]));
-
-    h += gSec('7. Lưu và đồng bộ với Google Sheet', false,
-      gList([
-        'Bấm là <b>hiện kết quả ngay</b>, việc ghi vào sheet chạy ngầm. Không cần chờ.',
-        '<b>Mất mạng vẫn dùng được</b>: app mở số liệu đã lưu trên máy, bạn vẫn bấm giờ ra về bình thường. Thanh nhỏ ở trên cùng báo số thay đổi đang chờ, và app tự gửi lên sheet khi có mạng lại.',
-        'Nếu ghi vào sheet bị lỗi, app báo <b>Lỗi: …</b> và tự tải lại số liệu thật từ sheet để không bị lệch.',
-        'Bạn vẫn có thể sửa trực tiếp trong sheet. Bấm nút <b>⟳ tải lại</b> để app đọc lại.',
-        'Lịch tự thêm ngày mới để luôn có sẵn khoảng 120 ngày phía trước. Mỗi ngày, ở lần mở app đầu tiên (hoặc lúc 1h sáng nếu đã bật trigger), app tự đánh dấu các ngày nghỉ.'
-      ]));
-
-    h += gSec('8. Câu hỏi thường gặp & phím tắt', false,
-      '<dl class="qa">' +
-      '<dt>Tiền trong app khác với sheet?</dt><dd>Bấm ⟳ để tải lại. Nếu cột Số tiền trong sheet có công thức riêng thì app lấy theo công thức đó.</dd>' +
-      '<dt>Muốn đổi giá mỗi giờ?</dt><dd>Sửa <b>RATE</b> ở đầu Code, rồi Deploy bản mới. Các ngày đã lưu giữ nguyên số tiền cũ.</dd>' +
-      '<dt>Muốn thêm hoặc đổi nút giờ ra về?</dt><dd>Sửa danh sách <b>PRESETS</b> trong Code (mỗi mốc gồm số giờ và chữ giờ ra về).</dd>' +
-      '<dt>Không lưu được?</dt><dd>Kiểm tra mạng, bấm ⟳ rồi thử lại. Nếu vẫn lỗi, kiểm tra tab <b>THỐNG KÊ</b> còn đúng tên và ngày ở cột A.</dd>' +
-      '<dt>Cài app lên màn hình chính?</dt><dd><b>iPhone</b> (Safari): nút Chia sẻ → <b>Thêm vào MH chính</b>. <b>Android</b> (Chrome): menu ⋮ → <b>Cài đặt ứng dụng</b>. <b>Máy tính</b> (Chrome/Edge): biểu tượng cài đặt ở cuối thanh địa chỉ.</dd>' +
-      '<dt>Phím tắt trên laptop</dt><dd><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd> đổi mục · <kbd>←</kbd> <kbd>→</kbd> đổi tháng (Lịch sử) hoặc năm (Biểu đồ) · <kbd>Esc</kbd> đóng hộp nhập.</dd>' +
-      '</dl>');
-
-    box.innerHTML = h;
-    if (was.length) {
-      Array.prototype.forEach.call(box.querySelectorAll('details'), function (d, i) {
-        if (was[i] != null) { d.open = was[i]; d.classList.toggle('on', was[i]); }
-      });
-    }
-  }
-
   /* ---------- chuyển tab ---------- */
   function showTab(t) {
     tab = t;
@@ -1490,9 +1262,6 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 
   /* ---------- sự kiện ---------- */
   document.addEventListener('click', function (e) {
-    var sm = e.target.closest('.gd > summary');
-    if (sm) { e.preventDefault(); toggleGuide(sm.parentNode); return; }
-
     var tb = e.target.closest('[data-tab]');
     if (tb) { if (tb.dataset.tab !== tab && DATA) showTab(tb.dataset.tab); return; }
 
