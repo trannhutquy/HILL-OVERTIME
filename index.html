@@ -448,17 +448,49 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 
 /* ---------- màn hình khởi động (hiện trong lúc tải số liệu) ---------- */
 #splash{position:fixed;inset:0;z-index:25;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
-  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);overflow:hidden;
+  transition:opacity .45s ease,visibility .45s}
+/* nền tách riêng để lúc mở app chỉ nền mờ đi, còn 2 nửa logo vẫn bay ra */
+#splash::before{content:'';position:absolute;inset:0;
   background:linear-gradient(165deg,var(--bg1) 0%,var(--bg2) 40%,var(--bg3) 76%,var(--bg4) 100%);
-  transition:opacity .45s ease,visibility .45s;animation:splashAuto .5s 20s forwards}
+  transition:opacity .5s ease}
+#splash > *{position:relative;z-index:1}
 #splash.out{opacity:0;visibility:hidden;pointer-events:none}
-#splash img{width:92px;height:auto;margin-bottom:14px;animation:hillSpin 2.6s cubic-bezier(.45,.05,.3,1) infinite}
+/* logo = 2 nửa vòng cung: quay chậm liên tục cho tới khi dữ liệu về thì mới tách */
+.slogo{position:relative;width:92px;height:92px;margin-bottom:14px;
+  filter:drop-shadow(0 8px 26px rgba(var(--aqua2-rgb),.35));
+  animation:slFade .7s var(--ease) both}
+.slogo .shalf{position:absolute;inset:0;display:block}
+.slogo img{display:block;width:92px;height:auto;
+  animation:hillSpin 3.8s linear infinite;will-change:transform}
+.slogo .sl img{clip-path:inset(0 50% 0 0)}
+.slogo .sr img{clip-path:inset(0 0 0 50%)}
 #splash b{font-size:24px;font-weight:800;letter-spacing:-.02em;text-shadow:0 2px 18px rgba(var(--aqua-rgb),.45);
   animation:hillIn .7s var(--ease) both}
 #splash small{color:var(--ink-2);font-size:13.5px;animation:hillIn .7s .15s var(--ease) both}
 @keyframes hillSpin{to{transform:rotate(360deg)}}
+@keyframes slFade{from{opacity:0}}
 @keyframes hillIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-@keyframes splashAuto{to{opacity:0;visibility:hidden}}
+/* lúc mở app: 2 nửa tách ra, bay về 2 hướng; nền tan dần để lộ giao diện */
+#splash.split .slogo{animation:none}
+#splash.split .slogo img{animation:none}
+#splash.split .sl{animation:flyL .85s cubic-bezier(.32,.7,.3,1) forwards}
+#splash.split .sr{animation:flyR .85s cubic-bezier(.32,.7,.3,1) forwards}
+#splash.split::before{opacity:0;transition:opacity .55s .12s ease}
+#splash.split b,#splash.split small{animation:textOut .32s ease forwards}
+@keyframes flyL{
+  0%{opacity:1;transform:none}
+  16%{transform:scale(1.08)}
+  55%{opacity:1}
+  100%{opacity:0;transform:translate(-42vw,-8vh) rotate(-22deg) scale(.9)}
+}
+@keyframes flyR{
+  0%{opacity:1;transform:none}
+  16%{transform:scale(1.08)}
+  55%{opacity:1}
+  100%{opacity:0;transform:translate(42vw,8vh) rotate(22deg) scale(.9)}
+}
+@keyframes textOut{to{opacity:0;transform:translateY(-10px)}}
 @media (min-width:1024px){
   .brand{display:flex;align-items:center;gap:12px}
   .brand img{width:44px;height:44px;flex:none}
@@ -651,10 +683,29 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 @keyframes chipIn{from{opacity:0;transform:translateY(12px) scale(.97)}}
 .cap.anim{animation:capIn .4s var(--ease)}
 @keyframes capIn{from{opacity:0;transform:translateY(5px)}}
+
+/* ---------- footer của app (tab Cài đặt) ---------- */
+.appfoot{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;
+  margin:24px 6px 6px;padding:20px 16px 10px;border-top:1px solid rgba(255,255,255,.16);color:var(--ink-3)}
+.appfoot img{width:40px;height:40px;margin-bottom:8px;opacity:.92;
+  filter:drop-shadow(0 6px 16px rgba(var(--aqua2-rgb),.4))}
+.appfoot b{font-size:15.5px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.appfoot small{font-size:12px;color:var(--ink-3);margin-top:1px}
+.appfoot .fline{width:56px;height:3px;border-radius:99px;margin:13px 0 10px;
+  background:linear-gradient(90deg,var(--aqua),var(--lilac));opacity:.75}
+.appfoot .fnote{font-size:12px;color:var(--ink-2);line-height:1.5}
+#v-guide:not([hidden]) .appfoot{animation:footIn .55s .08s var(--ease) both}
+@keyframes footIn{from{opacity:0;transform:translateY(14px)}}
 </style>
 </head>
 <body>
-<div id="splash" role="status" aria-live="polite"><img src="icons/logo-mark.png" alt="" width="92" height="92"><b>HILL Overtime</b><small>Đang tải số liệu…</small></div>
+<div id="splash" role="status" aria-live="polite">
+  <span class="slogo" aria-hidden="true">
+    <span class="shalf sl"><img src="icons/logo-mark.png" alt="" width="92" height="92"></span>
+    <span class="shalf sr"><img src="icons/logo-mark.png" alt="" width="92" height="92"></span>
+  </span>
+  <b>HILL Overtime</b><small>Đang tải số liệu…</small>
+</div>
 <div class="bg" aria-hidden="true"><i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i></div>
 
 <div class="shell">
@@ -782,9 +833,16 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
       <div class="month left"><small>Giao diện · Thông báo · Cập nhật</small>Cài đặt</div>
     </div>
     <div class="card glass verbox">
-      <div><b>Cập nhật</b><small id="verTxt">v2026.11.05-1</small></div>
+      <div><b>Cập nhật</b><small id="verTxt">v2026.11.05-3</small></div>
       <button class="ghost" id="btnUpdate">Cập nhật app</button>
     </div>
+    <footer class="appfoot" id="appFoot">
+      <img src="icons/logo-mark.png" alt="" width="40" height="40">
+      <b>HILL Overtime</b>
+      <small>Theo dõi giờ và tiền tăng ca</small>
+      <span class="fline" aria-hidden="true"></span>
+      <span class="fnote">Bản quyền thuộc về Nhựt Quy.</span>
+    </footer>
   </section>
 </div>
 
@@ -1552,6 +1610,33 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
       if (e) $('cRa').value = e;
     }
   };
+
+  /* ---------- intro: logo quay chậm tới khi số liệu về -> dừng đúng góc rồi tách 2 nửa vòng cung ---------- */
+  (function () {
+    var done = false;
+    /* pwa.js gọi hàm này khi số liệu đã về (quick = true khi cần hiện hộp nhập mã / mạng treo) */
+    window.hillSplashOut = function (el, quick) {
+      if (done || !el) return;
+      done = true;
+      function remove(ms) {
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, ms);
+      }
+      if (quick || REDUCED) {                    // không cần intro: tắt nhanh cho khỏi chờ
+        el.classList.add('out');
+        remove(REDUCED ? 0 : 460);
+        return;
+      }
+      setTimeout(function () {
+        /* giữ nguyên góc đang quay của từng nửa để lúc dừng không bị giật */
+        Array.prototype.forEach.call(el.querySelectorAll('.slogo img'), function (im) {
+          var m = getComputedStyle(im).transform;
+          im.style.transform = (m && m !== 'none') ? m : 'rotate(0deg)';
+        });
+        el.classList.add('split');
+        remove(950);
+      }, 80);
+    };
+  })();
 
   load();
 })();

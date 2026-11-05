@@ -33,6 +33,8 @@
     if (!el) return;
     var wait = now ? 0 : Math.max(0, 800 - (Date.now() - splashAt));
     setTimeout(function () {
+      /* index.html lo phần intro (logo tách đôi). Không có thì tắt kiểu cũ. */
+      if (window.hillSplashOut) { window.hillSplashOut(el, !!now); return; }
       el.classList.add('out');
       setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 500);
     }, wait);

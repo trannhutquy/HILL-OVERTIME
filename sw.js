@@ -3,7 +3,7 @@
      Nếu nội dung khác bản đã lưu thì lưu bản mới rồi báo cho trang để tự tải lại.
    - Phông Google Fonts: lưu lại để offline vẫn đúng chữ.
    - Gọi API Apps Script (POST) không bao giờ bị lưu. Đổi VERSION khi thêm/bớt file trong SHELL. */
-const VERSION = 'hill-v2';
+const VERSION = 'hill-v3';
 const FONTS = 'hill-fonts';
 const META = 'hill-meta';          // chỉ chứa 1 mục: thời điểm service worker thấy bản mới (trang đọc để biết mình đang cũ)
 const SHELL = [
