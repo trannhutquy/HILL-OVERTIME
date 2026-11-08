@@ -81,9 +81,24 @@
   /* Sinh nhật 26/11: chỉ riêng ngày đó app tự mặc áo hồng nhạt – trắng.
      Không ghi đè màu người dùng đã chọn; hôm sau mở lại là tự về màu cũ. */
   var today = new Date();
-  var bdayPreview = /[?&](?:bday|sinhnhat)=1(?:&|$)/.test(location.search);   // ?bday=1 để xem thử trước
+  var bdayPreview = /[?&](?:bday|sinhnhat)=(?:1|reset)(?:&|$)/.test(location.search);   // ?bday=1 xem thử, ?bday=reset xoá dấu rồi xem lại
+  var bdayReset = /[?&](?:bday|sinhnhat)=reset(?:&|$)/.test(location.search); // ?bday=reset: xoá dấu "đã mở quà" để xem lại
   var bday = bdayPreview || (today.getMonth() === 10 && today.getDate() === 26);
-  window.HILL_BDAY = { on: bday, preview: bdayPreview, key: 'hill.bday.' + today.getFullYear() };
+  /* Mỗi thiết bị chỉ được mở hộp quà một lần (không theo năm): bấm mở quà là ghi dấu,
+     đóng thư là ghi dấu thứ hai. Lần sau máy đó chỉ còn dải ảnh + lời chúc.
+     ?bday=1 dùng dấu riêng nên xem thử không làm mất lượt của ngày thật. */
+  window.HILL_BDAY = {
+    on: bday, preview: bdayPreview,
+    key: bdayPreview ? 'hill.bday.previewOpened' : 'hill.bday.giftOpened',       // đã bấm mở quà
+    closedKey: bdayPreview ? 'hill.bday.previewClosed' : 'hill.bday.letterClosed' // đã đóng thư (xem xong)
+  };
+  if (bdayReset) {
+    try {
+      Object.keys(localStorage).forEach(function (k) {
+        if (k.indexOf('hill.bday.') === 0) localStorage.removeItem(k);
+      });
+    } catch (e) {}
+  }
   if (bday) {
     W.classList.add('bday');
     setMeta('#ffdbea');
@@ -1109,7 +1124,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
       <div class="month left"><small>Giao diện · Thông báo · Cập nhật</small>Cài đặt</div>
     </div>
     <div class="card glass verbox">
-      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-8</small></div>
+      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-9</small></div>
       <button class="ghost" id="btnUpdate">Cập nhật app</button>
     </div>
     <footer class="appfoot" id="appFoot">
@@ -1958,24 +1973,31 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
       con.appendChild(s);
     }
   }
+  function bdayGet(k) { try { return !!localStorage.getItem(k); } catch (e) { return false; } }
+  function bdayPut(k) { try { localStorage.setItem(k, '1'); } catch (e) {} }
+  /* Tính cả dấu của chế độ xem thử: thiết bị đã mở quà (dù là xem thử hay ngày thật)
+     thì không mở lại nữa. ?bday=reset xoá hết dấu để xem lại. */
+  function bdayOpened() { return bdayGet('hill.bday.giftOpened') || bdayGet('hill.bday.previewOpened'); }
   function bdayShow() {
     if (!window.HILL_BDAY || !window.HILL_BDAY.on) return;
     var box = $('bday');
     if (!box || !box.hidden) return;
-    /* ?bday=1 chỉ để xem thử: không đánh dấu đã xem, để ngày thật vẫn còn lượt */
-    if (!window.HILL_BDAY.preview) { try { localStorage.setItem(window.HILL_BDAY.key, '1'); } catch (e) {} }
-    box.classList.add('gift');                       // vào app thấy hộp quà trước, chưa hiện thư
+    /* Chưa mở quà: hiện hộp quà. Đã mở nhưng chưa đóng thư (lỡ tắt app giữa chừng):
+       vào thẳng lá thư, không bắt mở hộp quà lần nữa. */
+    var opened = bdayOpened();
+    if (!opened) box.classList.add('gift');
     bdayConfetti();
     box.hidden = false;
     void box.offsetWidth;
     box.classList.add('on');
     document.documentElement.classList.add('bdayLock');
-    var g = $('giftBox');
-    if (g) setTimeout(function () { try { g.focus({ preventScroll: true }); } catch (e) { g.focus(); } }, 420);
+    var f = opened ? $('bdayClose') : $('giftBox');
+    if (f) setTimeout(function () { try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); } }, 420);
   }
   function bdayOpenGift() {                          // bấm hộp quà: nắp bật ra, thư bay lên, nhạc nổi
     var box = $('bday');
     if (!box || box.hidden || !box.classList.contains('gift')) return;
+    bdayPut(window.HILL_BDAY.key);                   // đánh dấu thiết bị này đã mở quà
     var gift = $('giftBox');
     if (gift) gift.classList.add('opening');
     bdayMusicStart();                                // đây là thao tác người dùng nên trình duyệt cho phát nhạc
@@ -1988,6 +2010,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
   function bdayClose() {
     var box = $('bday');
     if (!box || box.hidden) return;
+    bdayPut(window.HILL_BDAY.closedKey);             // đã xem xong: lần sau chỉ còn dải ảnh
     box.classList.remove('on');
     box.classList.add('off');
     document.documentElement.classList.remove('bdayLock');
@@ -2115,19 +2138,18 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
       setTimeout(waitSplash, 120);
     })();
   }
-  function bdaySeen() {
-    if (window.HILL_BDAY.preview) return false;
-    try { return !!localStorage.getItem(window.HILL_BDAY.key); } catch (e) { return false; }
+  function bdayDone() {                             // đã xem xong (mở quà + đóng thư): chỉ còn dải ảnh
+    return bdayGet('hill.bday.letterClosed') || bdayGet('hill.bday.previewClosed');
   }
   function bdayMaybe() {
     if (!window.HILL_BDAY || !window.HILL_BDAY.on) return;
-    if (bdaySeen()) return;
+    if (bdayDone()) return;
     afterSplash(bdayShow);
   }
   function bdayStart() {                            // gọi khi app tải xong dữ liệu lần đầu
     if (!window.HILL_BDAY || !window.HILL_BDAY.on) return;
     bdayMusicAuto();                                // nhạc chạy cả ngày (chờ chạm nếu bị chặn tự phát)
-    if (bdaySeen()) afterSplash(bdayStripShow);     // đã xem thư hôm nay: chỉ hiện dải ảnh
+    if (bdayDone()) afterSplash(bdayStripShow);     // thiết bị này đã mở quà rồi: chỉ hiện dải ảnh
     else bdayMaybe();
   }
 
