@@ -558,6 +558,14 @@
     $('hillHue').oninput = function () { T.set({ m: 'hue', h: Number(this.value) }); refresh(); };
     $('hillThemeReset').onclick = function () { T.set(null); refresh(); };
     refresh();
+
+    /* 26/11: app tự mặc áo hồng, tạm ẩn bảng chọn màu để khỏi hiểu nhầm là bị lỗi */
+    if (window.HILL_BDAY && window.HILL_BDAY.on) {
+      box.classList.add('bdayMode');
+      var tx = box.querySelector('.tx');
+      if (tx) tx.insertAdjacentHTML('afterend',
+        '<div class="bdayNote">🎂 Hôm nay là sinh nhật em nên app tự mặc áo hồng. Mai app sẽ trở lại màu bạn đã chọn.</div>');
+    }
   })();
 
   /* ---------- qua nửa đêm: app mở xuyên đêm hoặc nằm nền thì tự cập nhật "hôm nay" ---------- */

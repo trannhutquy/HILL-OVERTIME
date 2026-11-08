@@ -60,6 +60,7 @@
   function valid(t) { return t && (t.m === 'black' || (t.m === 'hue' && isFinite(Number(t.h)))); }
 
   function apply(t) {
+    if (bday) return;          // 26/11: giữ giao diện hồng, không áp màu đã lưu
     if (!valid(t)) {
       KEYS.forEach(function (k) { if (VAR[k]) W.style.removeProperty(VAR[k]); if (RGB[k]) W.style.removeProperty(RGB[k]); });
       W.style.removeProperty('--orb-o'); setMeta(null); return;
@@ -76,7 +77,21 @@
   var cur = null;
   try { cur = JSON.parse(localStorage.getItem('hill.theme')); } catch (e) {}
   if (!valid(cur)) cur = null;
-  apply(cur);
+
+  /* Sinh nhật 26/11: chỉ riêng ngày đó app tự mặc áo hồng nhạt – trắng.
+     Không ghi đè màu người dùng đã chọn; hôm sau mở lại là tự về màu cũ. */
+  var today = new Date();
+  var bdayPreview = /[?&](?:bday|sinhnhat)=1(?:&|$)/.test(location.search);   // ?bday=1 để xem thử trước
+  var bday = bdayPreview || (today.getMonth() === 10 && today.getDate() === 26);
+  window.HILL_BDAY = { on: bday, preview: bdayPreview, key: 'hill.bday.' + today.getFullYear() };
+  if (bday) {
+    W.classList.add('bday');
+    setMeta('#ffdbea');
+    var sb = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (sb) sb.setAttribute('content', 'default');     // nền sáng: thanh trạng thái dùng chữ tối
+  } else {
+    apply(cur);
+  }
 
   window.HILL_THEME = {
     apply: apply, palette: palette, hex: hex, BLACK: BLACK, valid: valid,
@@ -696,6 +711,141 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 .appfoot .fnote{font-size:12px;color:var(--ink-2);line-height:1.5}
 #v-guide:not([hidden]) .appfoot{animation:footIn .55s .08s var(--ease) both}
 @keyframes footIn{from{opacity:0;transform:translateY(14px)}}
+
+/* ======================= SINH NHẬT 26/11: giao diện hồng nhạt – trắng ======================= */
+/* Chỉ bật khi <html> có class "bday" (script đầu trang tự thêm đúng ngày 26/11).
+   Màu người dùng đã chọn vẫn nằm trong localStorage, hôm sau tự quay lại. */
+html.bday{
+  --bg1:#ffe1ee;--bg2:#ffd0e2;--bg3:#fff1f7;--bg4:#ffffff;
+  --ink:#4b1730;--ink-2:rgba(75,23,48,.78);--ink-3:rgba(75,23,48,.58);
+  --stroke:rgba(219,112,147,.32);
+  --aqua:#ec4899;--aqua-2:#f472b6;--lilac:#f9a8d4;--night:#5b1230;
+  --aqua-rgb:236,72,153;--aqua2-rgb:244,114,182;--lilac-rgb:251,207,232;--night-rgb:91,18,48;
+  --tint-rgb:255,255,255;--panel-rgb:255,250,252;--shade-rgb:190,60,110;--glass-rgb:255,240,246;
+  --scrim-rgb:90,20,50;--orb-o:.55;
+}
+html.bday .glass{
+  background:linear-gradient(135deg,rgba(255,255,255,.78) 0%,rgba(255,255,255,.46) 46%,rgba(255,255,255,.68) 100%),var(--tint);
+  border-color:rgba(219,112,147,.3);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.95),0 12px 30px rgba(190,60,110,.16);
+}
+html.bday .sidecard .keys{border-top-color:rgba(219,112,147,.28)}
+html.bday .date{background:rgba(255,255,255,.55);border-color:rgba(219,112,147,.3)}
+html.bday .preset{background:rgba(255,255,255,.6);border-color:rgba(219,112,147,.28);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
+html.bday .preset.sel{background:linear-gradient(135deg,rgba(249,168,212,.8),rgba(244,114,182,.6));
+  border-color:rgba(236,72,153,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 0 22px rgba(236,72,153,.25)}
+html.bday .preset.off b{color:#be123c}
+html.bday .preset.sunp{border-color:rgba(217,119,6,.35)}
+html.bday .preset.sunp b{color:#b45309}
+html.bday .row.rest{--tint:rgba(255,208,225,.88);border-color:rgba(236,72,153,.45);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.9),0 10px 26px rgba(236,72,153,.18)}
+html.bday .row.rest .ra{color:#9d174d}
+html.bday .row.sun{--tint:rgba(255,236,190,.88);border-color:rgba(245,158,11,.45);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.9),0 10px 26px rgba(217,119,6,.16)}
+html.bday .row.sun .ra,html.bday .row.sun .right b{color:#92400e}
+html.bday .year.sunpill{color:#b45309;border-color:rgba(217,119,6,.35)}
+html.bday .status.ok::before{background:#10b981;box-shadow:0 0 10px #10b981}
+html.bday .tag{background:rgba(236,72,153,.14);color:#9d174d;border-color:rgba(236,72,153,.38)}
+html.bday .tag.muted{background:rgba(75,23,48,.06);color:var(--ink-3);border-color:rgba(75,23,48,.14)}
+html.bday .tag.off{background:#ffd9e2;color:#7f1238}
+html.bday .tag.sun{background:#fde68a;color:#78350f}
+html.bday .chip.up b{color:#047857}
+html.bday .chip.down b{color:#be123c}
+html.bday .dt{background:rgba(219,112,147,.18)}
+html.bday .ct.hi{fill:#5b1230}
+html.bday svg.chart line{stroke:rgba(120,40,70,.22)}
+html.bday .col .bar[fill="rgba(255,255,255,.35)"]{fill:rgba(120,40,70,.18)}
+html.bday .cd{background:rgba(255,255,255,.5);border-color:rgba(219,112,147,.18)}
+html.bday .cd.has{box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
+html.bday .cd.has b,html.bday .cd.has small{color:#5b1230}
+html.bday .cd.rest{background:rgba(255,196,218,.72);border-color:rgba(236,72,153,.4)}
+html.bday .cd.rest small{color:#9d174d}
+html.bday .cd.sun{background:rgba(253,224,71,.32);border-color:rgba(217,119,6,.35)}
+html.bday .cd.sun b{color:#92400e}
+html.bday .cd.sun.has{background:linear-gradient(150deg,rgba(253,224,71,.8),rgba(251,191,36,.62));
+  border-color:rgba(217,119,6,.45)}
+html.bday .cd.sun.has b,html.bday .cd.sun.has small{color:#78350f}
+html.bday .cd.cur{box-shadow:0 0 0 2px #ec4899}
+html.bday .cd.sel{box-shadow:0 0 0 2px #fff,0 0 20px rgba(236,72,153,.45)}
+html.bday .cd.sel::before{border-color:rgba(236,72,153,.75)}
+html.bday .cd.cur.sel::before{border-color:#db2777}
+html.bday .seg .thumb,html.bday .tabbar .thumb{background:linear-gradient(135deg,#f9a8d4,#f472b6);
+  box-shadow:0 6px 20px rgba(236,72,153,.32),inset 0 1px 0 rgba(255,255,255,.8)}
+html.bday .seg button.on,html.bday .tabbar button.on{color:#5b1230}
+html.bday input{color:#4b1730;background:rgba(255,255,255,.6);border-color:rgba(219,112,147,.35)}
+html.bday input::placeholder{color:rgba(75,23,48,.45)}
+html.bday input:focus{border-color:#ec4899;background:#fff;box-shadow:0 0 0 4px rgba(236,72,153,.16)}
+html.bday .grab{background:rgba(75,23,48,.22)}
+html.bday kbd{background:rgba(255,255,255,.6);border-color:rgba(219,112,147,.35);color:var(--ink-2)}
+html.bday .appfoot{border-top-color:rgba(219,112,147,.25)}
+html.bday .primary{color:#fff;background:linear-gradient(135deg,#f472b6,#db2777);
+  box-shadow:0 10px 26px rgba(236,72,153,.3),inset 0 1px 0 rgba(255,255,255,.5)}
+html.bday .ghost{background:rgba(255,255,255,.55);border-color:rgba(219,112,147,.35)}
+html.bday .slide{background:linear-gradient(135deg,#f9a8d4,#f472b6)}
+html.bday .slide .sl-label{color:#5b1230}
+html.bday .sw span{border-color:rgba(219,112,147,.3)}
+html.bday .sw.on{color:var(--ink)}
+html.bday .sw.on span{border-color:#db2777;box-shadow:0 0 0 3px rgba(236,72,153,.28)}
+html.bday .slogo{filter:drop-shadow(0 8px 26px rgba(236,72,153,.35))}
+
+/* ghi chú trong tab Cài đặt khi đang là ngày sinh nhật */
+#hillThemeBox .bdayNote{margin-top:10px;padding:10px 12px;border-radius:14px;font-size:12.5px;line-height:1.5;
+  color:#7a1442;background:rgba(255,205,225,.55);border:1px solid rgba(236,72,153,.28)}
+#hillThemeBox.bdayMode .swatches,#hillThemeBox.bdayMode .hue,#hillThemeBox.bdayMode #hillThemeReset{display:none}
+
+/* ---------- lá thư chúc mừng sinh nhật ---------- */
+html.bdayLock,html.bdayLock body{overflow:hidden}
+#bday{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+  padding:calc(20px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));
+  background:radial-gradient(circle at 50% 16%,rgba(255,255,255,.6),rgba(255,255,255,0) 58%),rgba(255,214,231,.86);
+  -webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);
+  overflow:auto;opacity:0;transition:opacity .38s ease}
+#bday[hidden]{display:none}
+#bday.on{opacity:1}
+#bday.off{opacity:0;pointer-events:none}
+#bdayConfetti{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+#bdayConfetti i{position:absolute;top:-12vh;line-height:1;opacity:0;font-style:normal;
+  animation:bdayFall var(--t,7s) linear var(--d,0s) infinite;will-change:transform}
+@keyframes bdayFall{
+  0%{opacity:0;transform:translate3d(0,-10vh,0) rotate(0)}
+  8%{opacity:.95}
+  82%{opacity:.85}
+  100%{opacity:0;transform:translate3d(var(--x,20px),118vh,0) rotate(var(--r,360deg))}
+}
+.letter{position:relative;z-index:2;width:100%;max-width:430px;margin:auto;border-radius:28px;
+  padding:28px 24px 22px;text-align:center;color:#4b1730;
+  background:radial-gradient(circle at 50% 0%,#ffffff 0%,rgba(255,255,255,0) 62%),
+    linear-gradient(165deg,#fffdfd 0%,#fff0f6 55%,#ffe3ef 100%);
+  box-shadow:0 30px 70px rgba(150,30,80,.28),inset 0 1px 0 rgba(255,255,255,.95),0 0 0 1px rgba(255,255,255,.85);
+  transform-origin:50% 18%;animation:letterIn .85s var(--spring) both}
+@keyframes letterIn{from{opacity:0;transform:translateY(26px) scale(.9) rotate(-1.5deg)}to{opacity:1;transform:none}}
+.letter::before,.letter::after{content:'';position:absolute;left:22px;right:22px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(219,112,147,.45),transparent)}
+.letter::before{top:10px}
+.letter::after{bottom:10px}
+.bdaySeal{display:inline-grid;place-items:center;width:54px;height:54px;margin-bottom:8px;border-radius:50%;
+  font-size:26px;line-height:1;background:radial-gradient(circle at 35% 30%,#ffe3ef,#ff9ec4 72%);
+  box-shadow:0 10px 24px rgba(236,72,153,.32),inset 0 2px 4px rgba(255,255,255,.9);
+  animation:beat 1.8s ease-in-out infinite}
+@keyframes beat{0%,100%{transform:scale(1)}12%{transform:scale(1.14)}24%{transform:scale(.98)}36%{transform:scale(1.08)}52%{transform:scale(1)}}
+.bdayDate{font-size:11.5px;font-weight:700;letter-spacing:.44em;color:#c2457a;margin:2px 0 8px}
+.letter h2{margin:0 0 4px;font-size:23px;line-height:1.25;font-weight:800;letter-spacing:-.02em;color:#7a1442}
+.letter .bdaySub{margin:0 0 16px;font-size:12.5px;font-weight:600;color:#a85c7e}
+.letter p{margin:0 0 11px;font-size:14.5px;line-height:1.7;text-align:left;color:#5c2742}
+.letter p.bdayHi{margin-bottom:8px;font-weight:700;color:#7a1442}
+.bdaySign{display:block;margin-top:14px;font-size:14px;font-style:italic;color:#a13a67}
+.bdayBtn{margin-top:16px;width:100%;padding:14px;border:0;border-radius:18px;font-weight:800;font-size:15px;color:#fff;
+  background:linear-gradient(135deg,#f472b6,#ec4899 60%,#db2777);
+  box-shadow:0 12px 26px rgba(236,72,153,.35),inset 0 1px 0 rgba(255,255,255,.5);
+  transition:transform .25s var(--spring),box-shadow .25s}
+.bdayBtn:active{transform:scale(.96)}
+@media (max-height:700px){
+  .letter{padding:20px 20px 16px}
+  .bdaySeal{width:44px;height:44px;font-size:21px;margin-bottom:6px}
+  .letter h2{font-size:20px}
+  .letter p{font-size:13.5px;line-height:1.6;margin-bottom:8px}
+}
 </style>
 </head>
 <body>
@@ -833,7 +983,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
       <div class="month left"><small>Giao diện · Thông báo · Cập nhật</small>Cài đặt</div>
     </div>
     <div class="card glass verbox">
-      <div><b>Cập nhật</b><small id="verTxt">v2026.11.05-3</small></div>
+      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-1</small></div>
       <button class="ghost" id="btnUpdate">Cập nhật app</button>
     </div>
     <footer class="appfoot" id="appFoot">
@@ -869,6 +1019,24 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
 </div>
 
 <div class="toast glass" id="toast"></div>
+
+<!-- Lá thư sinh nhật: chỉ hiện một lần vào ngày 26/11 hằng năm -->
+<div id="bday" hidden>
+  <div id="bdayConfetti" aria-hidden="true"></div>
+  <div class="letter" role="dialog" aria-modal="true" aria-labelledby="bdayTitle">
+    <span class="bdaySeal" aria-hidden="true">💗</span>
+    <div class="bdayDate">26 · 11</div>
+    <h2 id="bdayTitle">Chúc mừng sinh nhật em</h2>
+    <p class="bdaySub">Một lá thư nhỏ, gửi riêng cho em hôm nay.</p>
+    <p class="bdayHi">Gửi em,</p>
+    <p>Hôm nay là ngày 26 tháng 11 — ngày đẹp nhất tháng, vì đó là ngày em đến với thế giới này.</p>
+    <p>Cảm ơn em vì đã ở bên anh thêm một năm nữa, cùng anh đi qua những ngày dài, vừa năm ngoái, mình được đón sinh nhật đúng ngày hôm nay, năm nay lại không được rồi.</p>
+    <p>Chúc em tuổi mới thật nhiều sức khỏe, thật nhiều niềm vui, và luôn là cô gái được thương nhất trên đời.</p>
+    <p>Chúc em tất cả, cô gái lì lợm của anh. 💗</p>
+    <span class="bdaySign">— Nhựt Quy -</span>
+    <button class="bdayBtn" id="bdayClose" type="button">Đóng thư</button>
+  </div>
+</div>
 
 <script src="config.js"></script>
 <script src="pwa.js"></script>
@@ -1386,6 +1554,7 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
     }
     render(!quiet);
     if (!quiet) hideToast();
+    if (first) bdayMaybe();          // 26/11: mở lá thư sau khi app tải xong
     first = false;
   }
 
@@ -1636,6 +1805,73 @@ kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:7px;text-ali
         remove(950);
       }, 80);
     };
+  })();
+
+  /* ---------- lá thư sinh nhật: chỉ ngày 26/11, lần đầu mở app trong ngày ---------- */
+  function bdayShow() {
+    if (!window.HILL_BDAY || !window.HILL_BDAY.on) return;
+    var box = $('bday');
+    if (!box || !box.hidden) return;
+    /* ?bday=1 chỉ để xem thử: không đánh dấu đã xem, để ngày thật vẫn còn lượt */
+    if (!window.HILL_BDAY.preview) { try { localStorage.setItem(window.HILL_BDAY.key, '1'); } catch (e) {} }
+    var con = $('bdayConfetti');
+    if (con && !REDUCED && !con.childNodes.length) {
+      var G = ['💗', '💖', '🌸', '✨', '🎀', '💕', '🌷'];
+      for (var i = 0; i < 20; i++) {
+        var s = document.createElement('i');
+        s.textContent = G[i % G.length];
+        s.style.left = (3 + Math.random() * 94) + '%';
+        s.style.fontSize = Math.round(13 + Math.random() * 15) + 'px';
+        s.style.setProperty('--t', (6.5 + Math.random() * 4).toFixed(2) + 's');
+        s.style.setProperty('--d', (-Math.random() * 10).toFixed(2) + 's');
+        s.style.setProperty('--x', Math.round(Math.random() * 90 - 45) + 'px');
+        s.style.setProperty('--r', Math.round(Math.random() * 720 - 360) + 'deg');
+        con.appendChild(s);
+      }
+    }
+    box.hidden = false;
+    void box.offsetWidth;
+    box.classList.add('on');
+    document.documentElement.classList.add('bdayLock');
+    setTimeout(function () {
+      var b = $('bdayClose');
+      if (b) { try { b.focus({ preventScroll: true }); } catch (e) { b.focus(); } }
+    }, 420);
+  }
+  function bdayClose() {
+    var box = $('bday');
+    if (!box || box.hidden) return;
+    box.classList.remove('on');
+    box.classList.add('off');
+    document.documentElement.classList.remove('bdayLock');
+    setTimeout(function () {
+      box.hidden = true;
+      box.classList.remove('off');
+      var con = $('bdayConfetti');
+      if (con) con.innerHTML = '';
+    }, 400);
+  }
+  function bdayMaybe() {
+    if (!window.HILL_BDAY || !window.HILL_BDAY.on) return;
+    if (!window.HILL_BDAY.preview) {
+      try { if (localStorage.getItem(window.HILL_BDAY.key)) return; } catch (e) {}
+    }
+    var t0 = Date.now();
+    (function waitSplash() {                       // đợi intro mở app xong rồi mới hiện thư
+      var sp = $('splash');
+      if (!sp || Date.now() - t0 > 3200) {
+        setTimeout(bdayShow, REDUCED ? 0 : 240);
+        return;
+      }
+      setTimeout(waitSplash, 120);
+    })();
+  }
+  (function () {
+    var b = $('bdayClose');
+    if (b) b.onclick = bdayClose;
+    var box = $('bday');
+    if (box) box.addEventListener('click', function (e) { if (e.target === box) bdayClose(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') bdayClose(); });
   })();
 
   load();
