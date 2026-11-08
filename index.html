@@ -1124,7 +1124,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
       <div class="month left"><small>Giao diện · Thông báo · Cập nhật</small>Cài đặt</div>
     </div>
     <div class="card glass verbox">
-      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-9</small></div>
+      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-10</small></div>
       <button class="ghost" id="btnUpdate">Cập nhật app</button>
     </div>
     <footer class="appfoot" id="appFoot">
@@ -2229,7 +2229,8 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
     });
   })();
 
-  bdayMusicAuto();          // 26/11: nhạc bật ngay khi vào app (chờ chạm nếu trình duyệt chặn)
+  /* 26/11: nhạc + hộp quà hiện ngay khi vào app, không chờ dữ liệu (mạng lỗi vẫn có quà) */
+  bdayStart();
   load();
 })();
 </script>
