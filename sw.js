@@ -3,13 +3,14 @@
      Nếu nội dung khác bản đã lưu thì lưu bản mới rồi báo cho trang để tự tải lại.
    - Phông Google Fonts: lưu lại để offline vẫn đúng chữ.
    - Gọi API Apps Script (POST) không bao giờ bị lưu. Đổi VERSION khi thêm/bớt file trong SHELL. */
-const VERSION = 'hill-v4';
+const VERSION = 'hill-v5';
 const FONTS = 'hill-fonts';
 const META = 'hill-meta';          // chỉ chứa 1 mục: thời điểm service worker thấy bản mới (trang đọc để biết mình đang cũ)
 const SHELL = [
   './', 'index.html', 'config.js', 'pwa.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png',
-  'icons/apple-touch-icon.png', 'icons/favicon-32.png', 'icons/logo-mark.png'
+  'icons/apple-touch-icon.png', 'icons/favicon-32.png', 'icons/logo-mark.png',
+  'icons/logo-mark-bday.png', 'icons/favicon-32-bday.png', 'icons/favicon-64-bday.png'
 ];
 
 self.addEventListener('install', (e) => {

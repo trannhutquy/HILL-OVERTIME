@@ -89,6 +89,17 @@
     setMeta('#ffdbea');
     var sb = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
     if (sb) sb.setAttribute('content', 'default');     // nền sáng: thanh trạng thái dùng chữ tối
+    /* logo trong app + icon tab: đổi sang bản hồng cho riêng ngày 26/11 */
+    document.addEventListener('DOMContentLoaded', function () {
+      var im = document.querySelectorAll('img[src$="icons/logo-mark.png"]');
+      for (var i = 0; i < im.length; i++) im[i].setAttribute('src', 'icons/logo-mark-bday.png');
+      var ic = document.querySelectorAll('link[rel="icon"]');
+      for (var j = 0; j < ic.length; j++) {
+        var h = ic[j].getAttribute('href') || '';
+        ic[j].setAttribute('href', h.replace('favicon-32.png', 'favicon-32-bday.png')
+                                  .replace('favicon-64.png', 'favicon-64-bday.png'));
+      }
+    });
   } else {
     apply(cur);
   }
@@ -1096,7 +1107,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
       <div class="month left"><small>Giao diện · Thông báo · Cập nhật</small>Cài đặt</div>
     </div>
     <div class="card glass verbox">
-      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-6</small></div>
+      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-7</small></div>
       <button class="ghost" id="btnUpdate">Cập nhật app</button>
     </div>
     <footer class="appfoot" id="appFoot">
