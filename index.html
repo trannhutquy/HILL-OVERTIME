@@ -116,7 +116,7 @@
 <title>HILL Overtime</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --tint:rgba(var(--tint-rgb),.38);
@@ -795,26 +795,52 @@ html.bday .slogo{filter:drop-shadow(0 8px 26px rgba(236,72,153,.35))}
 #hillThemeBox.bdayMode .swatches,#hillThemeBox.bdayMode .hue,#hillThemeBox.bdayMode #hillThemeReset{display:none}
 
 /* ---------- dải ảnh kỷ niệm chạy ngang (chỉ ngày sinh nhật) ---------- */
-#bdayStrip{position:relative;margin:0 0 16px;padding:10px 0;border-radius:22px;overflow:hidden;
+#bdayStrip{position:relative;margin:0 0 16px;padding:10px 0 4px;border-radius:22px;overflow:hidden;
   background:linear-gradient(135deg,rgba(255,255,255,.74),rgba(255,214,231,.52));
   border:1px solid rgba(219,112,147,.3);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 12px 30px rgba(190,60,110,.15);
-  -webkit-mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent);
-  mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent)}
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 12px 30px rgba(190,60,110,.15)}
 #bdayStrip[hidden]{display:none}
 #bdayStrip.ready{animation:stripIn .7s var(--ease) both}
+#bdayStrip.noPhotos{padding-top:0}
+#bdayStrip.noPhotos .bdayMask{display:none}
 @keyframes stripIn{from{opacity:0;transform:translateY(-12px)}}
+.bdayMask{overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent)}
 #bdayRail{display:flex;width:max-content;will-change:transform;animation:bdayRun 30s linear infinite}
 #bdayRail .grp{display:flex;gap:12px;padding-right:12px}
 #bdayRail img{width:126px;height:162px;object-fit:cover;flex:0 0 auto;border-radius:14px;
   background:#ffe3ef;border:4px solid #fff;box-shadow:0 8px 18px rgba(150,30,80,.22);
   transform:rotate(var(--r,0deg))}
 @keyframes bdayRun{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
+
+/* lời chúc cách điệu dưới dải ảnh */
+.bdayWish{display:flex;align-items:center;justify-content:center;gap:9px;
+  margin-top:2px;padding:8px 14px 6px;text-align:center;position:relative}
+.bdayWish::before{content:'';position:absolute;top:0;left:18%;right:18%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(219,112,147,.45),transparent)}
+.bdayWish .bwText{font-family:"Dancing Script","Be Vietnam Pro",cursive;font-size:32px;font-weight:700;line-height:1.18;
+  background:linear-gradient(100deg,#be185d 0%,#f472b6 24%,#db2777 50%,#f9a8d4 74%,#be185d 100%);
+  background-size:220% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 2px 8px rgba(236,72,153,.22));
+  animation:wishShine 7s ease-in-out infinite}
+@keyframes wishShine{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.bdayWish .bwHeart{font-size:13px;line-height:1;animation:wishBeat 3.6s ease-in-out infinite}
+.bdayWish .bwHeart:last-child{animation-delay:1.8s}
+@keyframes wishBeat{0%,100%{opacity:.6;transform:scale(.9)}50%{opacity:1;transform:scale(1.16)}}
+@media (max-width:400px){.bdayWish .bwText{font-size:27px}.bdayWish{gap:6px;padding-left:8px;padding-right:8px}}
+@supports not ((-webkit-background-clip:text) or (background-clip:text)){
+  .bdayWish .bwText{color:#be185d;-webkit-text-fill-color:#be185d;background:none;animation:none}
+}
+
 @media (hover:hover){#bdayStrip:hover #bdayRail{animation-play-state:paused}}
 @media (prefers-reduced-motion:reduce){
-  #bdayStrip{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .bdayMask{overflow-x:auto;-webkit-overflow-scrolling:touch}
   #bdayRail{animation:none}
   #bdayRail .grp:nth-child(2){display:none}
+  .bdayWish .bwText{animation:none}
+  .bdayWish .bwHeart{animation:none}
 }
 
 /* ---------- lá thư chúc mừng sinh nhật ---------- */
@@ -923,9 +949,14 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
       <button class="icon glass js-reload" aria-label="Tải lại"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
     </div>
 
-    <!-- Dải ảnh kỷ niệm: hiện sau khi đóng lá thư ngày 26/11 -->
+    <!-- Dải ảnh kỷ niệm + lời chúc: hiện sau khi đóng lá thư ngày 26/11 -->
     <div id="bdayStrip" hidden aria-label="Ảnh kỷ niệm sinh nhật">
-      <div id="bdayRail"></div>
+      <div class="bdayMask"><div id="bdayRail"></div></div>
+      <div class="bdayWish">
+        <span class="bwHeart" aria-hidden="true">💗</span>
+        <span class="bwText">Chúc mừng sinh nhật em</span>
+        <span class="bwHeart" aria-hidden="true">💗</span>
+      </div>
     </div>
 
     <div class="cols home">
@@ -1012,7 +1043,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
       <div class="month left"><small>Giao diện · Thông báo · Cập nhật</small>Cài đặt</div>
     </div>
     <div class="card glass verbox">
-      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-2</small></div>
+      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-3</small></div>
       <button class="ghost" id="btnUpdate">Cập nhật app</button>
     </div>
     <footer class="appfoot" id="appFoot">
@@ -1923,8 +1954,19 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
   function bdayStripShow() {
     var box = $('bdayStrip'), rail = $('bdayRail');
     if (!box || !rail || !box.hidden) return;
+    var shown = false;
+    function reveal() {
+      if (shown) return;
+      shown = true;
+      box.hidden = false;
+      requestAnimationFrame(function () { box.classList.add('ready'); });
+    }
     bdayPhotos(function (list) {
-      if (!list.length) return;                     // chưa có ảnh: không hiện gì
+      if (!list.length) {                           // chưa có ảnh: vẫn hiện lời chúc
+        box.classList.add('noPhotos');
+        reveal();
+        return;
+      }
       if (!rail.childNodes.length) {
         var frag = document.createDocumentFragment(), g, k, im, grp;
         for (g = 0; g < 2; g++) {
@@ -1947,13 +1989,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
           if (w) rail.style.animationDuration = Math.max(16, Math.round(w / 46)) + 's';
         });
       }
-      var first = rail.querySelector('img'), shown = false;
-      function reveal() {
-        if (shown) return;
-        shown = true;
-        box.hidden = false;
-        requestAnimationFrame(function () { box.classList.add('ready'); });
-      }
+      var first = rail.querySelector('img');
       if (first && !first.complete) {
         first.addEventListener('load', reveal, { once: true });
         first.addEventListener('error', reveal, { once: true });
