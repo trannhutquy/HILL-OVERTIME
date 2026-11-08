@@ -943,17 +943,6 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
 @keyframes letterFly{from{opacity:0;transform:translateY(-46px) scale(.52) rotate(-3deg)}
   70%{opacity:1}to{opacity:1;transform:none}}
 
-/* nút bật/tắt nhạc (một cái trên lá thư, một cái trên dải ảnh để dùng cả ngày) */
-.bdayAudio{display:grid;place-items:center;border-radius:50%;cursor:pointer;padding:0;
-  font-size:18px;line-height:1;color:#9d174d;background:rgba(255,255,255,.82);
-  border:1px solid rgba(219,112,147,.4);box-shadow:0 8px 18px rgba(190,60,110,.18);
-  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.bdayAudio[hidden]{display:none}
-.bdayAudio.muted{opacity:.72}
-#bday .bdayAudio{position:fixed;top:calc(12px + env(safe-area-inset-top));right:12px;z-index:6;width:40px;height:40px}
-#bdayStrip .bdayAudio{position:absolute;top:8px;right:10px;z-index:3;width:30px;height:30px;font-size:14px;
-  box-shadow:0 4px 10px rgba(190,60,110,.16)}
-
 @media (prefers-reduced-motion:reduce){
   .giftStage,.giftBox,.giftHint{animation:none}
   .giftBox.opening,.giftBox.opening .giftLid,.giftBox.opening .giftBow,.giftBox.opening .giftBody{animation:none}
@@ -1015,7 +1004,6 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
 
     <!-- Dải ảnh kỷ niệm + lời chúc: hiện sau khi đóng lá thư ngày 26/11 -->
     <div id="bdayStrip" hidden aria-label="Ảnh kỷ niệm sinh nhật">
-      <button class="bdayAudio js-bdayMusic" type="button" aria-label="Tắt nhạc chúc mừng" aria-pressed="true" hidden>🔊</button>
       <div class="bdayMask"><div id="bdayRail"></div></div>
       <div class="bdayWish">
         <span class="bwHeart" aria-hidden="true">💗</span>
@@ -1108,7 +1096,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
       <div class="month left"><small>Giao diện · Thông báo · Cập nhật</small>Cài đặt</div>
     </div>
     <div class="card glass verbox">
-      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-5</small></div>
+      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-6</small></div>
       <button class="ghost" id="btnUpdate">Cập nhật app</button>
     </div>
     <footer class="appfoot" id="appFoot">
@@ -1148,7 +1136,6 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
 <!-- Sinh nhật 26/11: hộp quà → lá thư → dải ảnh kỷ niệm -->
 <div id="bday" hidden>
   <div id="bdayConfetti" aria-hidden="true"></div>
-  <button id="bdayMusic" class="bdayAudio js-bdayMusic" type="button" aria-label="Tắt nhạc chúc mừng" aria-pressed="true" hidden>🔊</button>
   <div class="giftStage" role="dialog" aria-modal="true" aria-label="Hộp quà sinh nhật">
     <button class="giftBox" id="giftBox" type="button" aria-label="Mở hộp quà sinh nhật">
       <span class="giftBow" aria-hidden="true">🎀</span>
@@ -1970,7 +1957,6 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
     void box.offsetWidth;
     box.classList.add('on');
     document.documentElement.classList.add('bdayLock');
-    bdayMusicBtn();
     var g = $('giftBox');
     if (g) setTimeout(function () { try { g.focus({ preventScroll: true }); } catch (e) { g.focus(); } }, 420);
   }
@@ -1992,7 +1978,6 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
     box.classList.remove('on');
     box.classList.add('off');
     document.documentElement.classList.remove('bdayLock');
-    bdayMusicBtn();                                // nhạc vẫn chạy tiếp cả ngày, chỉ tắt khi bấm nút
     setTimeout(bdayStripShow, 260);                // đóng thư xong: dải ảnh kỷ niệm trượt vào
     setTimeout(function () {
       box.hidden = true;
@@ -2005,11 +1990,9 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
   }
 
   /* ---------- nhạc chúc mừng: tạo bằng Web Audio nên không cần file mp3, chạy cả offline ----------
-     Ngày 26/11 nhạc chạy suốt ngày: mở hộp quà là bắt đầu, đóng thư vẫn tiếp tục.
+     Ngày 26/11 nhạc phát ngay khi vào app và chạy suốt cả ngày, không có nút tắt.
      Trình duyệt chặn tự phát nên nếu chưa có thao tác chạm, nhạc chờ lần chạm đầu tiên. */
-  var bdayAC = null, bdayMusicOn = false, bdayMute = false, bdayArmed = false;
-  var BDAY_MUTE_KEY = 'hill.bday.music.' + new Date().getFullYear();   // chỉ nhớ trong năm nay
-  try { bdayMute = localStorage.getItem(BDAY_MUTE_KEY) === 'off'; } catch (e) {}
+  var bdayAC = null, bdayMusicOn = false, bdayArmed = false;
   var BDAY_BEAT = 0.62;                            // ~97 nhịp/phút
   var BDAY_TUNE = [
     ['G4', .75], ['G4', .25], ['A4', 1], ['G4', 1], ['C5', 1], ['B4', 2],
@@ -2020,17 +2003,6 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
   var BDAY_FREQ = { G4: 392, A4: 440, B4: 493.88, C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99 };
 
   function bdayAudioReady() { return !!(window.AudioContext || window.webkitAudioContext); }
-  function bdayMusicBtn() {
-    var list = document.querySelectorAll('.js-bdayMusic'), ok = bdayAudioReady(), off = !bdayMusicOn;
-    for (var i = 0; i < list.length; i++) {
-      var b = list[i];
-      b.hidden = !ok;
-      b.classList.toggle('muted', off);
-      b.textContent = off ? '🔇' : '🔊';
-      b.setAttribute('aria-label', off ? 'Bật nhạc chúc mừng' : 'Tắt nhạc chúc mừng');
-      b.setAttribute('aria-pressed', off ? 'false' : 'true');
-    }
-  }
   function bdayTone(t, freq, dur) {
     var ac = bdayAC, len = Math.max(0.34, dur * 1.45);
     var o = ac.createOscillator(), o2 = ac.createOscillator();
@@ -2078,7 +2050,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
     document.addEventListener('touchstart', kick, true);
   }
   function bdayMusicStart() {
-    if (!bdayAudioReady()) { bdayMusicBtn(); return; }
+    if (!bdayAudioReady()) return;
     if (!bdayAC) {
       var AC = window.AudioContext || window.webkitAudioContext;
       try { bdayAC = new AC(); } catch (e) { return; }
@@ -2088,12 +2060,10 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
       bdayAC._notes = [];
     }
     var ac = bdayAC;
-    if (bdayMute) { bdayMusicBtn(); return; }
     function begin() {                             // chỉ lên lịch khi context đã chạy thật
-      if (bdayMute || bdayMusicOn) return;
+      if (bdayMusicOn) return;
       if (ac.state !== 'running') { bdayArmGesture(); return; }
       bdayMusicOn = true;
-      bdayMusicBtn();
       try {
         ac.master.gain.cancelScheduledValues(ac.currentTime);
         ac.master.gain.setValueAtTime(Math.max(0.0001, ac.master.gain.value), ac.currentTime);
@@ -2106,43 +2076,16 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
     try { p = ac.resume(); } catch (e) {}
     if (p && p.then) p.then(begin, function () { bdayArmGesture(); });
     else begin();
+    if (ac.state !== 'running') bdayArmGesture();   // dự phòng: chờ lần chạm đầu tiên
   }
-  function bdayMusicAuto() {                       // mở app ngày 26/11: cố phát lại, bị chặn thì chờ chạm
+  function bdayMusicAuto() {                       // mở app ngày 26/11: phát ngay, bị chặn thì chờ chạm
     if (!window.HILL_BDAY || !window.HILL_BDAY.on) return;
-    bdayMusicBtn();
-    if (!bdayMute) bdayMusicStart();
-  }
-  function bdayMusicHalt(fade) {
-    bdayMusicOn = false;
-    var ac = bdayAC;
-    if (!ac) return;
-    clearTimeout(ac._timer);
-    try {
-      ac.master.gain.cancelScheduledValues(ac.currentTime);
-      ac.master.gain.setValueAtTime(Math.max(0.0001, ac.master.gain.value), ac.currentTime);
-      ac.master.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + (fade || 0.35));
-    } catch (e) {}
-    setTimeout(function () {
-      (ac._notes || []).forEach(function (o) { try { o.stop(); } catch (e) {} });
-      ac._notes = [];
-    }, (fade || 0.35) * 1000 + 80);
-  }
-  function bdayMusicToggle() {
-    if (bdayMusicOn) {
-      bdayMute = true;
-      try { localStorage.setItem(BDAY_MUTE_KEY, 'off'); } catch (e) {}
-      bdayMusicHalt(0.25);
-      bdayMusicBtn();
-      return;
-    }
-    bdayMute = false;
-    try { localStorage.removeItem(BDAY_MUTE_KEY); } catch (e) {}
     bdayMusicStart();
   }
   /* quay lại app sau khi chuyển tab / mở khoá máy: tiếp tục nhạc */
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState !== 'visible') return;
-    if (!window.HILL_BDAY || !window.HILL_BDAY.on || bdayMute) return;
+    if (!window.HILL_BDAY || !window.HILL_BDAY.on) return;
     if (bdayAC && bdayAC.state === 'suspended') { try { bdayAC.resume(); } catch (e) {} }
     if (!bdayMusicOn) bdayMusicStart();
   });
@@ -2237,8 +2180,6 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
     if (b) b.onclick = bdayClose;
     var gift = $('giftBox');
     if (gift) gift.addEventListener('click', bdayOpenGift);   // nút nên Enter/Space đã tự kích hoạt
-    var mbs = document.querySelectorAll('.js-bdayMusic');
-    for (var mi = 0; mi < mbs.length; mi++) mbs[mi].addEventListener('click', bdayMusicToggle);
     var box = $('bday');
     if (box) box.addEventListener('click', function (e) {
       if (e.target !== box) return;
@@ -2252,6 +2193,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
     });
   })();
 
+  bdayMusicAuto();          // 26/11: nhạc bật ngay khi vào app (chờ chạm nếu trình duyệt chặn)
   load();
 })();
 </script>
