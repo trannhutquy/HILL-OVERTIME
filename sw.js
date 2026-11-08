@@ -3,7 +3,7 @@
      Nếu nội dung khác bản đã lưu thì lưu bản mới rồi báo cho trang để tự tải lại.
    - Phông Google Fonts: lưu lại để offline vẫn đúng chữ.
    - Gọi API Apps Script (POST) không bao giờ bị lưu. Đổi VERSION khi thêm/bớt file trong SHELL. */
-const VERSION = 'hill-v5';
+const VERSION = 'hill-v6';
 const FONTS = 'hill-fonts-v2';       // đổi tên khi đổi bộ phông, để bản CSS font cũ không bị dùng lại
 const META = 'hill-meta';          // chỉ chứa 1 mục: thời điểm service worker thấy bản mới (trang đọc để biết mình đang cũ)
 const SHELL = [
@@ -47,9 +47,20 @@ async function notify() {
   all.forEach((c) => c.postMessage({ type: 'HILL_UPDATED' }));
 }
 
+/* Khoá cache: bỏ phần ?query cho file của app (?source=pwa, ?bday=1, ?v=…) để mỗi
+   lần mở không sinh thêm một mục mới — nếu không, lần đọc sau sẽ luôn lấy mục cũ nhất. */
+function keyOf(req, sameOrigin) {
+  if (!sameOrigin) return req;
+  const u = new URL(req.url);
+  u.search = '';
+  u.hash = '';
+  return u.href;
+}
+
 function swr(e, cacheName, fallbackKey, sameOrigin) {
+  const key = keyOf(e.request, sameOrigin);
   e.respondWith(caches.open(cacheName).then(async (cache) => {
-    const hit = await cache.match(e.request, { ignoreSearch: sameOrigin });
+    const hit = await cache.match(key);
     // Bản sao dùng để so sánh: bản gốc sắp được trả cho trang và bị đọc hết, sau đó không clone/đọc lại được nữa
     const old = hit ? hit.clone() : null;
     // same-origin: bỏ qua bộ nhớ đệm HTTP (GitHub Pages giữ ~10 phút) để thấy bản mới sớm
@@ -57,7 +68,7 @@ function swr(e, cacheName, fallbackKey, sameOrigin) {
       .then(async (res) => {
         if (res && (res.ok || res.type === 'opaque')) {
           const isNew = old && sameOrigin && TEXTY.test(new URL(e.request.url).pathname) && await changed(old, res);
-          try { await cache.put(e.request, res.clone()); } catch (_) {}
+          try { await cache.put(key, res.clone()); } catch (_) {}
           if (isNew) await notify();
         }
         return res;
