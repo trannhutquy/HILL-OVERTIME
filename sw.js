@@ -4,7 +4,7 @@
    - Phông Google Fonts: lưu lại để offline vẫn đúng chữ.
    - Gọi API Apps Script (POST) không bao giờ bị lưu. Đổi VERSION khi thêm/bớt file trong SHELL. */
 const VERSION = 'hill-v5';
-const FONTS = 'hill-fonts';
+const FONTS = 'hill-fonts-v2';       // đổi tên khi đổi bộ phông, để bản CSS font cũ không bị dùng lại
 const META = 'hill-meta';          // chỉ chứa 1 mục: thời điểm service worker thấy bản mới (trang đọc để biết mình đang cũ)
 const SHELL = [
   './', 'index.html', 'config.js', 'pwa.js', 'manifest.webmanifest',
@@ -49,7 +49,7 @@ async function notify() {
 
 function swr(e, cacheName, fallbackKey, sameOrigin) {
   e.respondWith(caches.open(cacheName).then(async (cache) => {
-    const hit = await cache.match(e.request, { ignoreSearch: true });
+    const hit = await cache.match(e.request, { ignoreSearch: sameOrigin });
     // Bản sao dùng để so sánh: bản gốc sắp được trả cho trang và bị đọc hết, sau đó không clone/đọc lại được nữa
     const old = hit ? hit.clone() : null;
     // same-origin: bỏ qua bộ nhớ đệm HTTP (GitHub Pages giữ ~10 phút) để thấy bản mới sớm

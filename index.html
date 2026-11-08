@@ -127,7 +127,7 @@
 <title>HILL Overtime</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@1,600&display=swap" rel="stylesheet">
 <style>
 :root{
   --tint:rgba(var(--tint-rgb),.38);
@@ -830,7 +830,8 @@ html.bday .slogo{filter:drop-shadow(0 8px 26px rgba(236,72,153,.35))}
   margin-top:2px;padding:8px 14px 6px;text-align:center;position:relative}
 .bdayWish::before{content:'';position:absolute;top:0;left:18%;right:18%;height:1px;
   background:linear-gradient(90deg,transparent,rgba(219,112,147,.45),transparent)}
-.bdayWish .bwText{font-family:"Dancing Script","Be Vietnam Pro",cursive;font-size:32px;font-weight:700;line-height:1.18;
+.bdayWish .bwText{font-family:"Cormorant Garamond","Be Vietnam Pro",serif;font-style:italic;font-weight:600;
+  font-size:clamp(25px,7.3vw,36px);line-height:1.34;letter-spacing:.005em;padding:2px 0 3px;
   background:linear-gradient(100deg,#be185d 0%,#f472b6 24%,#db2777 50%,#f9a8d4 74%,#be185d 100%);
   background-size:220% 100%;
   -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
@@ -840,7 +841,8 @@ html.bday .slogo{filter:drop-shadow(0 8px 26px rgba(236,72,153,.35))}
 .bdayWish .bwHeart{font-size:13px;line-height:1;animation:wishBeat 3.6s ease-in-out infinite}
 .bdayWish .bwHeart:last-child{animation-delay:1.8s}
 @keyframes wishBeat{0%,100%{opacity:.6;transform:scale(.9)}50%{opacity:1;transform:scale(1.16)}}
-@media (max-width:400px){.bdayWish .bwText{font-size:27px}.bdayWish{gap:6px;padding-left:8px;padding-right:8px}}
+@media (max-width:400px){.bdayWish{gap:5px;padding-left:8px;padding-right:8px}
+  .bdayWish .bwHeart{font-size:11px}}
 @supports not ((-webkit-background-clip:text) or (background-clip:text)){
   .bdayWish .bwText{color:#be185d;-webkit-text-fill-color:#be185d;background:none;animation:none}
 }
@@ -1107,7 +1109,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
       <div class="month left"><small>Giao diện · Thông báo · Cập nhật</small>Cài đặt</div>
     </div>
     <div class="card glass verbox">
-      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-7</small></div>
+      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-8</small></div>
       <button class="ghost" id="btnUpdate">Cập nhật app</button>
     </div>
     <footer class="appfoot" id="appFoot">
@@ -2004,6 +2006,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
      Ngày 26/11 nhạc phát ngay khi vào app và chạy suốt cả ngày, không có nút tắt.
      Trình duyệt chặn tự phát nên nếu chưa có thao tác chạm, nhạc chờ lần chạm đầu tiên. */
   var bdayAC = null, bdayMusicOn = false, bdayArmed = false;
+  var BDAY_VOL = 0.34;                             // âm lượng tổng (0.2 = cũ, lớn hơn thì tăng số này, tối đa ~0.6)
   var BDAY_BEAT = 0.62;                            // ~97 nhịp/phút
   var BDAY_TUNE = [
     ['G4', .75], ['G4', .25], ['A4', 1], ['G4', 1], ['C5', 1], ['B4', 2],
@@ -2078,7 +2081,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
       try {
         ac.master.gain.cancelScheduledValues(ac.currentTime);
         ac.master.gain.setValueAtTime(Math.max(0.0001, ac.master.gain.value), ac.currentTime);
-        ac.master.gain.linearRampToValueAtTime(0.2, ac.currentTime + 1.4);
+        ac.master.gain.linearRampToValueAtTime(BDAY_VOL, ac.currentTime + 1.4);
       } catch (e) {}
       bdayTune(0.15);
     }
