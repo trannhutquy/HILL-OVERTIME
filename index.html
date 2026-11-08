@@ -1124,7 +1124,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
       <div class="month left"><small>Giao diện · Thông báo · Cập nhật</small>Cài đặt</div>
     </div>
     <div class="card glass verbox">
-      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-10</small></div>
+      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-11</small></div>
       <button class="ghost" id="btnUpdate">Cập nhật app</button>
     </div>
     <footer class="appfoot" id="appFoot">
@@ -2075,16 +2075,18 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
   function bdayArmGesture() {                      // chờ lần chạm / phím đầu tiên để được phép phát
     if (bdayArmed) return;
     bdayArmed = true;
+    var EVS = ['pointerdown', 'touchstart', 'keydown', 'click'];
+    function off() {
+      for (var i = 0; i < EVS.length; i++) document.removeEventListener(EVS[i], kick, true);
+    }
     function kick() {
-      document.removeEventListener('pointerdown', kick, true);
-      document.removeEventListener('keydown', kick, true);
-      document.removeEventListener('touchstart', kick, true);
+      off();
       bdayArmed = false;
       bdayMusicStart();
+      /* trình duyệt có thể vẫn từ chối (iOS): để lần chạm sau thử lại, không im lặng luôn */
+      setTimeout(function () { if (!bdayMusicOn) bdayArmGesture(); }, 500);
     }
-    document.addEventListener('pointerdown', kick, true);
-    document.addEventListener('keydown', kick, true);
-    document.addEventListener('touchstart', kick, true);
+    for (var j = 0; j < EVS.length; j++) document.addEventListener(EVS[j], kick, true);
   }
   function bdayMusicStart() {
     if (!bdayAudioReady()) return;
