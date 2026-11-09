@@ -881,6 +881,16 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
 #bday[hidden]{display:none}
 #bday.on{opacity:1}
 #bday.off{opacity:0;pointer-events:none}
+/* nền tối dần khi hộp quà xuất hiện (chỉ ở bước hộp quà, lá thư vẫn nền hồng sáng) */
+#bday::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(circle at 50% 24%,rgba(126,24,68,.55),rgba(18,6,15,0) 62%),
+    radial-gradient(circle at 50% 112%,rgba(100,14,46,.5),rgba(18,6,15,0) 58%),
+    linear-gradient(180deg,#150812 0%,#1e0a18 46%,#12060f 100%);
+  opacity:0;transition:opacity .55s ease}
+#bday.gift::before{opacity:1;animation:giftDark .7s ease both}
+@keyframes giftDark{from{opacity:0}to{opacity:1}}
+#bday.gift{-webkit-backdrop-filter:blur(18px) saturate(120%);backdrop-filter:blur(18px) saturate(120%)}
 #bdayConfetti{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
 #bdayConfetti i{position:absolute;top:-12vh;line-height:1;opacity:0;font-style:normal;
   animation:bdayFall var(--t,7s) linear var(--d,0s) infinite;will-change:transform}
@@ -924,34 +934,66 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
   .letter p{font-size:13.5px;line-height:1.6;margin-bottom:8px}
 }
 
-/* ---------- hộp quà: hiện trước, bấm vào mới mở ra lá thư ---------- */
+/* ---------- hộp quà: rớt từ trên xuống, đèn LED rọi, rung nhẹ, bấm mới mở ---------- */
 #bday.gift .letter{display:none}
-#bday:not(.gift) .giftStage{display:none}
-.giftStage{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:16px;
-  margin:auto;animation:giftIn .8s var(--spring) both}
-@keyframes giftIn{from{opacity:0;transform:translateY(24px) scale(.88)}}
-.giftBox{position:relative;width:176px;height:166px;padding:0;border:0;background:none;cursor:pointer;
-  -webkit-tap-highlight-color:transparent;filter:drop-shadow(0 20px 26px rgba(150,30,80,.3));
-  animation:giftFloat 3.8s ease-in-out infinite;border-radius:12px}
-.giftBox:active{transform:scale(.97)}
-.giftBox:focus-visible{outline:2px solid #db2777;outline-offset:6px}
-.giftBox::after{content:'';position:absolute;left:50%;bottom:-20px;width:140px;height:20px;border-radius:50%;
-  transform:translateX(-50%);background:radial-gradient(ellipse at center,rgba(150,30,80,.28),transparent 72%)}
-@keyframes giftFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.giftBow{position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:3;font-size:44px;line-height:1;
-  filter:drop-shadow(0 5px 7px rgba(150,30,80,.3))}
+#bday:not(.gift) .giftStage,#bday:not(.gift) .giftLight{display:none}
+.giftStage{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:22px;
+  margin:auto;animation:giftDrop 1.05s cubic-bezier(.22,.9,.28,1) both}
+@keyframes giftDrop{
+  0%{opacity:0;transform:translate3d(0,-86vh,0) scale(.8) rotate(-8deg)}
+  58%{opacity:1;transform:translate3d(0,0,0) scale(1.03) rotate(1.4deg)}
+  72%{transform:translate3d(0,-14px,0) scale(.995) rotate(-.6deg)}
+  84%{transform:translate3d(0,6px,0) scale(1.006) rotate(.3deg)}
+  94%{transform:translate3d(0,-2px,0) scale(1)}
+  100%{opacity:1;transform:none}
+}
+/* đèn LED trên cao: quầng sáng + chùm sáng hình nón rọi xuống hộp */
+.giftLight{position:fixed;left:50%;top:0;width:min(88vw,450px);height:clamp(320px,68vh,640px);
+  transform:translateX(-50%);pointer-events:none;z-index:1}
+.giftBeam{position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(255,240,248,.44) 0%,rgba(255,206,228,.2) 42%,rgba(255,206,228,0) 86%);
+  clip-path:polygon(47.5% 0,52.5% 0,100% 100%,0 100%);filter:blur(11px);
+  animation:giftLed 5.2s ease-in-out infinite}
+.giftBeam::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,226,240,0) 78%);
+  clip-path:polygon(45% 0,55% 0,100% 100%,0 100%);filter:blur(14px);opacity:.85}
+@keyframes giftLed{0%,100%{opacity:.76}50%{opacity:1}}
+.giftLamp{position:absolute;left:50%;top:0;transform:translateX(-50%);width:56px;height:14px;
+  border-radius:0 0 12px 12px;background:linear-gradient(180deg,#341526,#170a12);
+  box-shadow:0 7px 24px 6px rgba(255,214,231,.42),0 0 0 1px rgba(255,214,231,.18),
+    inset 0 -3px 6px rgba(255,214,231,.6)}
+.giftBox{position:relative;z-index:2;width:176px;height:166px;padding:0;border:0;background:none;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;border-radius:12px;
+  filter:drop-shadow(0 26px 30px rgba(0,0,0,.55)) drop-shadow(0 0 18px rgba(255,150,196,.34));
+  animation:giftTremble 2.6s ease-in-out 1.15s infinite}
+.giftBox:active{scale:.97}
+.giftBox:focus-visible{outline:2px solid #ff9ec4;outline-offset:8px}
+.giftBox::after{content:'';position:absolute;left:50%;bottom:-26px;width:180px;height:28px;border-radius:50%;
+  transform:translateX(-50%);filter:blur(2px);
+  background:radial-gradient(ellipse at center,rgba(255,198,224,.62),rgba(255,150,196,.22) 46%,transparent 74%)}
+@keyframes giftTremble{
+  0%,100%{transform:rotate(0) translateY(0)}
+  12%{transform:rotate(-1.1deg) translateY(-1px)}
+  26%{transform:rotate(.95deg) translateY(1px)}
+  40%{transform:rotate(-.8deg) translateY(0)}
+  54%{transform:rotate(.65deg) translateY(-1px)}
+  70%{transform:rotate(-.45deg) translateY(1px)}
+  84%{transform:rotate(.3deg) translateY(0)}
+}
+.giftBow{position:absolute;top:-6px;left:0;right:0;text-align:center;z-index:3;font-size:44px;line-height:1;
+  filter:drop-shadow(0 5px 7px rgba(40,5,20,.5)) drop-shadow(0 0 10px rgba(255,170,205,.5))}
 .giftLid{position:absolute;left:0;right:0;top:46px;height:32px;z-index:2;border-radius:9px;overflow:hidden;
   background:linear-gradient(165deg,#ffb3d2,#f472b6 55%,#db2777);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 4px 10px rgba(150,30,80,.22)}
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 4px 10px rgba(30,4,16,.4)}
 .giftBody{position:absolute;left:11px;right:11px;top:76px;bottom:0;border-radius:0 0 15px 15px;overflow:hidden;
   background:linear-gradient(165deg,#fb7fb4,#ec4899 52%,#be185d);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -14px 22px rgba(120,10,50,.18)}
 .giftLid::after,.giftBody::after{content:'';position:absolute;top:0;bottom:0;left:50%;width:30px;margin-left:-15px;
   background:linear-gradient(90deg,#ffe3ef,#fff8fb 45%,#ffd0e4);
   box-shadow:inset 1px 0 0 rgba(255,255,255,.7),inset -1px 0 0 rgba(219,112,147,.25)}
-.giftHint{margin:0;font-size:12.5px;font-weight:700;letter-spacing:.01em;color:#a13a67;
-  animation:giftHint 2.6s ease-in-out infinite}
-@keyframes giftHint{0%,100%{opacity:.62}50%{opacity:1}}
+.giftHint{margin:0;font-size:12.5px;font-weight:700;letter-spacing:.02em;color:#ffd9e9;
+  text-shadow:0 2px 12px rgba(90,10,45,.7);animation:giftHint 2.6s ease-in-out infinite}
+@keyframes giftHint{0%,100%{opacity:.6}50%{opacity:1}}
 .giftBox.opening{animation:giftShake .6s ease-in-out}
 @keyframes giftShake{
   0%,100%{transform:translate3d(0,0,0) rotate(0)}
@@ -972,7 +1014,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
   70%{opacity:1}to{opacity:1;transform:none}}
 
 @media (prefers-reduced-motion:reduce){
-  .giftStage,.giftBox,.giftHint{animation:none}
+  .giftStage,.giftBox,.giftHint,.giftBeam{animation:none}
   .giftBox.opening,.giftBox.opening .giftLid,.giftBox.opening .giftBow,.giftBox.opening .giftBody{animation:none}
   #bday:not(.gift) .letter{animation:none}
 }
@@ -1124,7 +1166,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
       <div class="month left"><small>Giao diện · Thông báo · Cập nhật</small>Cài đặt</div>
     </div>
     <div class="card glass verbox">
-      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-11</small></div>
+      <div><b>Cập nhật</b><small id="verTxt">v2026.11.08-12</small></div>
       <button class="ghost" id="btnUpdate">Cập nhật app</button>
     </div>
     <footer class="appfoot" id="appFoot">
@@ -1164,6 +1206,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
 <!-- Sinh nhật 26/11: hộp quà → lá thư → dải ảnh kỷ niệm -->
 <div id="bday" hidden>
   <div id="bdayConfetti" aria-hidden="true"></div>
+  <span class="giftLight" aria-hidden="true"><span class="giftBeam"></span><span class="giftLamp"></span></span>
   <div class="giftStage" role="dialog" aria-modal="true" aria-label="Hộp quà sinh nhật">
     <button class="giftBox" id="giftBox" type="button" aria-label="Mở hộp quà sinh nhật">
       <span class="giftBow" aria-hidden="true">🎀</span>
