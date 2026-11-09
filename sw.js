@@ -95,9 +95,9 @@ self.addEventListener('push', (e) => {
   const n = d.notification || d.data || d;
   e.waitUntil(self.registration.showNotification(n.title || 'Nhập giờ tăng ca', {
     body: n.body || 'Hôm nay bạn ra về lúc mấy giờ? Bấm để nhập nhé.',
-    icon: 'icons/icon-192.png',
-    tag: 'hill-daily',          // nhiều thông báo cùng loại chỉ giữ cái mới nhất
-    data: { url: './' }
+    icon: n.icon || 'icons/icon-192.png',
+    tag: n.tag || 'hill-daily',  // tag do máy chủ gửi (tin sinh nhật có tag riêng để không thay thế nhau)
+    data: { url: n.url || './' }
   }));                           // iOS bắt buộc: mỗi lần đẩy phải hiện thông báo
 });
 
