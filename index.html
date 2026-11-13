@@ -1264,7 +1264,7 @@ html.bdayLock,html.bdayLock body{overflow:hidden}
   var dm = function (iso) { return iso.slice(8) + '/' + iso.slice(5, 7); };
   /* Chủ nhật mặc định là ngày nghỉ. Nếu có đi làm thì chỉ có 2 lựa chọn cố định dưới đây
      (tiền vẫn tính theo công thức cũ: số giờ × giá giờ). Muốn đổi số giờ thì sửa ở đây. */
-  var SUN = [{ ra: 'Nửa ngày', h: 5.5 }, { ra: 'Một ngày', h: 11 }];
+  var SUN = [{ ra: 'Nửa ngày', h: 5 }, { ra: 'Một ngày', h: 11 }];
   var isSun = function (iso) { return dow(iso) === 0; };
   var monthKey = function (y, m) { return y + '-' + pad(m); };
 
